@@ -8,7 +8,24 @@ REST API for HexaBlock Suite: JWT authentication, progress sync per user and `ga
 
 ## Architecture
 
-TBD — Clean Architecture layers and diagram (see `/docs`).
+Clean Architecture with four layers. Source code dependencies only point inwards:
+
+```
+src/infrastructure  →  src/adapters  →  src/application  →  src/domain
+```
+
+| Folder | Layer | Contains |
+|---|---|---|
+| `src/domain` | Entities | Users, progress per `gameId`, scores, generic level schema |
+| `src/application` | Use Cases | Use cases and the ports they depend on |
+| `src/adapters` | Interface Adapters | HTTP controllers, DTOs, mappers, port implementations |
+| `src/infrastructure` | Frameworks | NestJS bootstrap, modules (composition root), database, configuration |
+
+The dependency rule is enforced by oxlint (`no-restricted-imports` overrides in `.oxlintrc.json`): an inner layer that imports an outer layer, or `domain` / `application` importing NestJS or Express, fails `npm run lint` and CI. `test/architecture/layer-boundaries.spec.ts` pins that configuration.
+
+Inner layers also avoid structural coupling in their names: ports and methods state intent (`IProgressRepository.save`), never the mechanism (`insertRow`, `signJwt`). Each layer folder has a README with its rules.
+
+Diagram: TBD (see `/docs`).
 
 ## Generic Engine
 
@@ -28,11 +45,24 @@ TBD
 
 ## Getting Started
 
-TBD
+Prerequisites: Node.js 24 and npm.
+
+```bash
+npm install
+npm run start:dev   # http://localhost:3000 (set PORT to change it)
+curl localhost:3000/health   # {"status":"ok"}
+```
 
 ## Tests
 
-TBD
+```bash
+npm test            # unit and architecture tests (Vitest)
+npm run test:e2e    # end-to-end tests against the HTTP API
+npm run lint        # oxlint, including the layer dependency rule
+npm run typecheck
+```
+
+Tests follow the AAA pattern and are named `should_[expected_result]_when_[condition]`. CI (`.github/workflows/ci.yml`) runs lint, typecheck, unit, e2e and build on every pull request.
 
 ## AI Usage
 
