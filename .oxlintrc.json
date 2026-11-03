@@ -1,0 +1,80 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "rules": {
+    "typescript/no-explicit-any": "off",
+    "typescript/no-floating-promises": "error"
+  },
+  "env": {
+    "node": true
+  },
+  "overrides": [
+    {
+      "files": ["src/domain/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/application", "**/application/**"],
+                "message": "Domain must not depend on the outer application layer."
+              },
+              {
+                "group": ["**/adapters", "**/adapters/**"],
+                "message": "Domain must not depend on the outer adapters layer. Depend on a port instead."
+              },
+              {
+                "group": ["**/infrastructure", "**/infrastructure/**"],
+                "message": "Domain must not depend on the outer infrastructure layer. Depend on a port instead."
+              },
+              {
+                "group": ["@nestjs/*", "express"],
+                "message": "Inner layers must not depend on framework packages. Depend on a port instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/application/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/adapters", "**/adapters/**"],
+                "message": "Use cases must not depend on the outer adapters layer. Depend on a port instead."
+              },
+              {
+                "group": ["**/infrastructure", "**/infrastructure/**"],
+                "message": "Use cases must not depend on the outer infrastructure layer. Depend on a port instead."
+              },
+              {
+                "group": ["@nestjs/*", "express"],
+                "message": "Inner layers must not depend on framework packages. Depend on a port instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/adapters/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/infrastructure", "**/infrastructure/**"],
+                "message": "Adapters must not depend on the outer infrastructure layer."
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
