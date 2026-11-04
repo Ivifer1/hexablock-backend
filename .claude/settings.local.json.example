@@ -1,0 +1,7 @@
+{
+  "env": {
+    "HEXABLOCK_GIT_EMAIL": "correo-de-tu-cuenta-llamb1315@ejemplo.com",
+    "HEXABLOCK_GIT_REMOTE_MATCH": "github-uni",
+    "GH_CONFIG_DIR": "/Users/TU_USUARIO/.config/gh-llamb1315"
+  }
+}
