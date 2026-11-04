@@ -14,9 +14,6 @@
 ## How to test
 <!-- Commands and manual steps. -->
 
-## AI usage
-<!-- Tool + model, what it generated, what the team changed. Mirrored in AI_USAGE.md. -->
-
 ## Checklist
 - [ ] Spec updated/approved before code (spec-first)
 - [ ] Design proposal approved by a human (`Status: APPROVED`)

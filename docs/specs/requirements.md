@@ -43,4 +43,4 @@ The client repo has its own catalog; cross-repo references use `client:FR-###`.
 - Who may create/update levels: an admin role, a seed script, or any authenticated user?
 - Progress sync conflicts: last write wins, or keep the maximum (stars, scores) per level?
 - Leaderboard: top N, pagination, one entry per user or every score?
-- Database (PostgreSQL, SQLite…) and the in-memory option for integration tests.
+- Database: MongoDB (decided by the team on 2026-11-04). Still open: the ODM and the in-memory option for integration tests.

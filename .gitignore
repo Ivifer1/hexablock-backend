@@ -14,3 +14,6 @@ coverage/
 # logs and OS files
 *.log
 .DS_Store
+
+# claude code (personal settings)
+.claude/settings.local.json

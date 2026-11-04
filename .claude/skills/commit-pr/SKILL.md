@@ -8,7 +8,6 @@ description: Create Conventional Commits (in English) for the current change and
 2. Group changes into small logical commits (spec, tests, implementation, docs). Each subject:
    `type(scope): imperative lowercase summary` in English, ≤ 72 chars; body explains WHY and cites IDs (`Refs: UC-010, FR-020`).
    Include the change record in the commit that introduces the code it explains.
-   Add the trailer `Assisted-by: Claude Code (<model>)` when AI wrote significant parts.
 3. Never commit on `main`, never `--no-verify`, never amend pushed commits.
 4. Ask the team before pushing. Then `git push -u origin <branch>`.
 5. Create the PR with `gh pr create --base main --title "<conventional title>" --body-file <tmp file>`. Build the body from
