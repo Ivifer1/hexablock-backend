@@ -62,10 +62,14 @@ describe('layer boundaries', () => {
     ['src/domain/level/sample.ts', '../../infrastructure/app.module.js'],
     ['src/domain/level/sample.ts', '@nestjs/common'],
     ['src/domain/level/sample.ts', 'express'],
+    ['src/domain/level/sample.ts', 'mongoose'],
+    ['src/domain/level/sample.ts', 'mongodb'],
     ['src/application/sample.ts', '../adapters/http/controller.js'],
     ['src/application/sample.ts', '../infrastructure/app.module.js'],
     ['src/application/sample.ts', '@nestjs/common'],
     ['src/application/sample.ts', 'express'],
+    ['src/application/sample.ts', 'mongoose'],
+    ['src/application/sample.ts', 'mongodb'],
     ['src/adapters/sample.ts', '../infrastructure/app.module.js'],
   ])('should_report_error_when_%s_imports_%s', (layerFile, importPath) => {
     // Arrange: the layer file and the forbidden import come from the table.
@@ -81,8 +85,10 @@ describe('layer boundaries', () => {
     ['src/application/sample.ts', '../domain/level.js'],
     ['src/adapters/sample.ts', '../application/use-case.js'],
     ['src/adapters/sample.ts', '@nestjs/common'],
+    ['src/adapters/sample.ts', 'mongoose'],
     ['src/infrastructure/sample.ts', '../adapters/http/controller.js'],
     ['src/infrastructure/sample.ts', '@nestjs/core'],
+    ['src/infrastructure/sample.ts', 'mongoose'],
   ])(
     'should_allow_import_when_%s_imports_inner_or_allowed_%s',
     (layerFile, importPath) => {
