@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "fit-003",
+  "gameId": "hexa-fit",
+  "order": 3,
+  "name": { "es": "El panal", "en": "The honeycomb" },
+  "board": {
+    "topology": "hex-axial",
+    "cells": [[0, 0], [1, 0], [0, 1], [-1, 1], [-1, 0], [0, -1], [1, -1]]
+  },
+  "fit": {
+    "pieces": [
+      { "id": "p1", "cells": [[0, 0], [1, 0], [0, 1]] },
+      { "id": "p2", "cells": [[0, 0], [1, 0]] },
+      { "id": "p3", "cells": [[0, 0], [0, 1]] }
+    ],
+    "stars": [
+      { "stars": 3, "maxMoves": 3, "maxSeconds": 30 },
+      { "stars": 2, "maxMoves": 6, "maxSeconds": 90 }
+    ]
+  }
+}
