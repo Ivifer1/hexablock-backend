@@ -21,7 +21,9 @@ src/infrastructure  →  src/adapters  →  src/application  →  src/domain
 | `src/adapters` | Interface Adapters | HTTP controllers, DTOs, mappers, port implementations |
 | `src/infrastructure` | Frameworks | NestJS bootstrap, modules (composition root), database, configuration |
 
-The dependency rule is enforced by oxlint (`no-restricted-imports` overrides in `.oxlintrc.json`): an inner layer that imports an outer layer, or `domain` / `application` importing NestJS or Express, fails `npm run lint` and CI. `test/architecture/layer-boundaries.spec.ts` pins that configuration.
+The dependency rule is enforced by oxlint (`no-restricted-imports` overrides in `.oxlintrc.json`): an inner layer that imports an outer layer, or `domain` / `application` importing NestJS, Express, Mongoose or the MongoDB driver, fails `npm run lint` and CI. `test/architecture/layer-boundaries.spec.ts` pins that configuration.
+
+Persistence: MongoDB with Mongoose, only in `adapters` and `infrastructure` (see [ADR-0001](docs/adr/0001-mongodb-with-mongoose.md)).
 
 Inner layers also avoid structural coupling in their names: ports and methods state intent (`IProgressRepository.save`), never the mechanism (`insertRow`, `signJwt`). Each layer folder has a README with its rules.
 

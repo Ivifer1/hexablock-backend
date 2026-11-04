@@ -30,6 +30,10 @@
               {
                 "group": ["@nestjs/*", "express"],
                 "message": "Inner layers must not depend on framework packages. Depend on a port instead."
+              },
+              {
+                "group": ["mongoose", "mongodb"],
+                "message": "Inner layers must not depend on database packages. Depend on a repository port instead."
               }
             ]
           }
@@ -54,6 +58,10 @@
               {
                 "group": ["@nestjs/*", "express"],
                 "message": "Inner layers must not depend on framework packages. Depend on a port instead."
+              },
+              {
+                "group": ["mongoose", "mongodb"],
+                "message": "Inner layers must not depend on database packages. Depend on a repository port instead."
               }
             ]
           }
