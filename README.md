@@ -71,7 +71,11 @@ See [AI_USAGE.md](AI_USAGE.md).
 ## Contributing
 
 - Branch from `main` and open a pull request; direct pushes to `main` are blocked.
-- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) in English.
+- Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) in English:
+  `type(scope): lowercase imperative summary`, for example `feat(auth): add login endpoint`.
+  Types: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `build`, `ci`, `chore`, `revert`.
+- commitlint checks every message: locally through a Git `commit-msg` hook (installed by `npm install`)
+  and in CI for every commit of a pull request.
 
 ## License
 
