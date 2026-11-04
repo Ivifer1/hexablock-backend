@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "id": "sort-001",
+  "gameId": "hexa-sort",
+  "order": 1,
+  "name": { "es": "Primeros colores", "en": "First colours" },
+  "board": {
+    "topology": "hex-axial",
+    "cells": [
+      [-2, 0], [-2, 1], [-2, 2],
+      [-1, -1], [-1, 0], [-1, 1], [-1, 2],
+      [0, -2], [0, -1], [0, 0], [0, 1], [0, 2],
+      [1, -2], [1, -1], [1, 0], [1, 1],
+      [2, -2], [2, -1], [2, 0]
+    ]
+  },
+  "sort": {
+    "goal": { "clearedStacks": 3 },
+    "colors": ["tone-1", "tone-2", "tone-3"],
+    "stackHeight": { "min": 2, "max": 5 },
+    "seed": 42
+  }
+}
