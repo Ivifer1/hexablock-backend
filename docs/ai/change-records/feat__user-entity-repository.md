@@ -110,8 +110,8 @@ Two changes from the diagram, both needed to keep the domain pure:
 | Domain stays free of Mongoose | existing `layer-boundaries.spec.ts` | architecture |
 
 ## Open questions for the team
-1. Is `toString()` acceptable to the professor as the only exit of the raw value of a value object? It is the minimum
-   possible: something must hand a `string` to MongoDB and to the JSON response.
+1. Resolved (Ivifer1, 2026-11-11): `toString()` is accepted as the only exit of a value object's raw value. The
+   primitive never travels through the domain; only outer layers (mapper, DTOs) call it at the boundary.
 2. When two people register the same username at the same time, MongoDB's unique index rejects the second one. The
    translation of that error into `409 Username already taken` belongs to #17 (with the use case and its typed error);
    this change only guarantees that the index exists.
