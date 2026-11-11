@@ -47,10 +47,11 @@ TBD
 
 ## Getting Started
 
-Prerequisites: Node.js 24 and npm.
+Prerequisites: Node.js 24, npm and a MongoDB server (local or hosted).
 
 ```bash
 npm install
+cp .env.example .env   # then set MONGODB_URI to your database
 npm run start:dev   # http://localhost:3000 (set PORT to change it)
 curl localhost:3000/health   # {"status":"ok"}
 ```
@@ -59,10 +60,12 @@ curl localhost:3000/health   # {"status":"ok"}
 
 ```bash
 npm test            # unit and architecture tests (Vitest)
-npm run test:e2e    # end-to-end tests against the HTTP API
+npm run test:e2e    # end-to-end tests against the HTTP API and an in-memory MongoDB
 npm run lint        # oxlint, including the layer dependency rule
 npm run typecheck
 ```
+
+E2E tests start one `mongodb-memory-server` instance for the whole run (it downloads a MongoDB binary the first time), so no database needs to be installed to run them.
 
 Tests follow the AAA pattern and are named `should_[expected_result]_when_[condition]`. CI (`.github/workflows/ci.yml`) runs lint, typecheck, unit, e2e and build on every pull request.
 
