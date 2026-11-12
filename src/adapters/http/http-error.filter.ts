@@ -5,6 +5,7 @@ import type { Request, Response } from 'express';
 import type { IClock } from '../../application/ports/clock.js';
 import { DomainError } from '../../domain/shared/domain-error.js';
 import { ErrorCode } from '../../domain/shared/error-code.js';
+import type { ErrorResponse, FieldError } from './error-response.js';
 import { RequestValidationError } from './request-validation.error.js';
 
 interface HttpError {
@@ -63,19 +64,21 @@ export class HttpErrorFilter implements ExceptionFilter {
     const response = http.getResponse<Response>();
 
     const { statusCode, error, message, details } = this.describe(exception);
-    response.status(statusCode).json({
+    const body: ErrorResponse = {
       statusCode,
       error,
       message,
       ...(details ? { details } : {}),
-      path: request.originalUrl,
+      // The route only: the query string is input and may carry secrets.
+      path: request.originalUrl.split('?')[0],
       timestamp: this.clock.now().toISOString(),
-    });
+    };
+    response.status(statusCode).json(body);
   }
 
   private describe(
     exception: unknown,
-  ): HttpError & { details?: RequestValidationError['details'] } {
+  ): HttpError & { details?: readonly FieldError[] } {
     if (exception instanceof RequestValidationError) {
       return {
         statusCode: 400,

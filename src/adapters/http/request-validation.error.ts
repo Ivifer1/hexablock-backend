@@ -1,7 +1,6 @@
-export interface FieldError {
-  readonly field: string;
-  readonly message: string;
-}
+import type { FieldError } from './error-response.js';
+
+export type { FieldError };
 
 // The request body broke one or more input rules. It lists every invalid
 // field, so the client can show all the problems at once (HTTP 400).
