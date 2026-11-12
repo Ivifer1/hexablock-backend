@@ -25,6 +25,11 @@ const DOMAIN_ERRORS: Partial<Record<ErrorCode, HttpError>> = {
     error: 'Unauthorized',
     message: 'Invalid credentials',
   },
+  [ErrorCode.AuthenticationRequired]: {
+    statusCode: 401,
+    error: 'Unauthorized',
+    message: 'Authentication required',
+  },
 };
 
 // A code without an entry is a bug on our side: answer 500 without details.
