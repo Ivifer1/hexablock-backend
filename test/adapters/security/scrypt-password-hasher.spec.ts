@@ -88,12 +88,22 @@ describe('ScryptPasswordHasher (UC-001, BR-001-5)', () => {
     expect(matches).toBe(true);
   });
 
+  // A well-formed salt (16 bytes) and key (64 bytes), so each case below
+  // breaks exactly one rule.
+  const SALT = 'ab'.repeat(16);
+  const KEY = 'cd'.repeat(64);
+
   it.each([
     'bcrypt$whatever',
-    'scrypt$16384$8$1$zz$zz',
-    'scrypt$999999999$8$1$00$00',
-    'scrypt$1048576$8$1$00$00',
-    'scrypt$16384$8$1$0011',
+    `scrypt$16384$8$1$zz$${KEY}`,
+    `scrypt$999999999$8$1$${SALT}$${KEY}`,
+    `scrypt$1048576$8$1$${SALT}$${KEY}`,
+    `scrypt$16384$8$1$${SALT}`,
+    `scrypt$2$8$1$${SALT}$${KEY}`,
+    `scrypt$131072$16$1$${SALT}$${KEY}`,
+    `scrypt$131072$8$16$${SALT}$${KEY}`,
+    `scrypt$16384$8$1$${SALT}$cd`,
+    `scrypt$16384$8$1$ab$${KEY}`,
   ])('should_throw_when_stored_hash_has_unknown_format (%s)', async (raw) => {
     // Arrange
     const stored = PasswordHash.of(raw);

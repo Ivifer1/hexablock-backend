@@ -11,12 +11,22 @@ const COST = { N: 2 ** 17, r: 8, p: 1 } as const;
 const MAX_MEMORY = 256 * 1024 * 1024;
 const SALT_BYTES = 16;
 const KEY_BYTES = 64;
-// A stored hash may carry an older cost; anything outside these bounds is
-// corrupt data, not a password to check.
+// A stored hash may carry an older or newer cost, but only within these
+// bounds. Anything else is corrupt or tampered data, not a password to
+// check: too cheap would be weak, too expensive would slow every login.
+const MIN_N = 2 ** 14;
 const MAX_N = 2 ** 17;
 const MAX_R = 16;
-const MAX_P = 16;
-const STORED_HASH = /^scrypt\$(\d+)\$(\d+)\$(\d+)\$([0-9a-f]{2,})\$([0-9a-f]{2,})$/;
+const MAX_P = 4;
+// Salt and key must have exactly the sizes this adapter writes.
+const STORED_HASH = new RegExp(
+  `^scrypt\\$(\\d+)\\$(\\d+)\\$(\\d+)\\$([0-9a-f]{${SALT_BYTES * 2}})\\$([0-9a-f]{${KEY_BYTES * 2}})$`,
+);
+
+// scrypt needs about 128 * N * r bytes; a cost above MAX_MEMORY cannot run.
+function fitsInMemory(n: number, r: number): boolean {
+  return 128 * n * r < MAX_MEMORY;
+}
 
 interface StoredHash {
   readonly options: ScryptOptions;
@@ -44,13 +54,13 @@ function parse(hash: PasswordHash): StoredHash {
   if (
     !match ||
     !isPowerOfTwo ||
+    n < MIN_N ||
     n > MAX_N ||
     r < 1 ||
     r > MAX_R ||
     p < 1 ||
     p > MAX_P ||
-    match[4].length % 2 !== 0 ||
-    match[5].length % 2 !== 0
+    !fitsInMemory(n, r)
   ) {
     throw new Error('Stored password hash is invalid');
   }
