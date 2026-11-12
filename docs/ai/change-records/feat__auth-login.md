@@ -100,6 +100,20 @@ Built as proposed, plus one test-infrastructure fix:
   setup (`test/support/mongo-memory.setup.ts`) now gives each test file its own database on the shared in-memory
   server. This bug was latent since #15 and showed up with the second e2e file that touches users.
 
+### Fixes after the independent security review (2026-11-12)
+Verdict: approve with notes. Verified by the reviewer: same 401 body and headers for an unknown username and a
+wrong password, and indistinguishable timing (medians 165.4 ms vs 165.6 ms over 20 samples each). Ivifer1 approved
+fixing items 1, 2 and 3 in this PR:
+1. `HttpErrorFilter` now catches every error (`@Catch()`). Unexpected errors (database down, corrupt stored hash,
+   bugs) answer the contract's 500 body with `path` and `timestamp`; their stack only goes to the server log
+   (NestJS `Logger`). Before, they used NestJS's default body without `error`, `path` or `timestamp`. This takes part
+   of #20 forward.
+2. A stored cost that cannot run is rejected as corrupt data: `128 * N * r` must stay below `maxmem` (N=2^17 with
+   r=16 was accepted and then failed inside scrypt).
+3. A tampered stored hash can no longer make logins slow or weak: N must be between 2^14 and 2^17, p at most 4,
+   and salt and key must have exactly 16 and 64 bytes.
+Not fixed here (team decision): per-IP rate limit; one client reached about 21 login attempts per second.
+
 ## Verification
 - RED first: 7 hasher unit tests failed, the login use case suite failed with "Cannot find module", and the 3
   login e2e tests failed with 404.
@@ -115,6 +129,10 @@ Built as proposed, plus one test-infrastructure fix:
   - Different 401 message → `should_return_same_401_when_username_or_password_is_wrong` failed.
   - `@HttpCode(200)` removed → `should_return_200_with_user_and_token_when_login_succeeds` failed.
 - The register e2e tests still pass unchanged (shared parser, filter and module).
+- After the review fixes: RED first (5 new hash cases and the 500 e2e test failed), then `npm test`: 87 passed,
+  `npm run test:e2e`: 21 passed, typecheck, lint and build clean. Rules broken on purpose, each restored afterwards:
+  no minimum cost, no memory rule, p up to 16, any key length, any salt length, unexpected errors not caught: each
+  made its own test fail.
 
 ## AI usage
 - Tool and model: Claude Code (Claude Opus 5.5).
