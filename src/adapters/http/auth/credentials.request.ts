@@ -1,3 +1,4 @@
+import { Credentials } from '../../../application/use-cases/auth.models.js';
 import { DomainError } from '../../../domain/shared/domain-error.js';
 import { Password } from '../../../domain/user/password.js';
 import { Username } from '../../../domain/user/username.js';
@@ -5,11 +6,6 @@ import {
   FieldError,
   RequestValidationError,
 } from '../request-validation.error.js';
-
-export interface Credentials {
-  readonly username: Username;
-  readonly password: Password;
-}
 
 // Validates the body at the edge. The rules are not repeated here: each field
 // is built through its value object, and a rejected field becomes one entry

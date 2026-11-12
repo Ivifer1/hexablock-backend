@@ -1,9 +1,9 @@
 import { Body, Controller, Inject, Post } from '@nestjs/common';
 import type { IUseCase } from '../../../application/use-case.js';
 import type {
-  RegisterInput,
-  RegisterOutput,
-} from '../../../application/use-cases/register.use-case.js';
+  AuthResult,
+  Credentials,
+} from '../../../application/use-cases/auth.models.js';
 import { AuthResponse, toAuthResponse } from './auth.response.js';
 import { REGISTER_USE_CASE } from './auth.tokens.js';
 import { parseCredentials } from './credentials.request.js';
@@ -13,7 +13,7 @@ import { parseCredentials } from './credentials.request.js';
 export class AuthController {
   constructor(
     @Inject(REGISTER_USE_CASE)
-    private readonly registerUser: IUseCase<RegisterInput, RegisterOutput>,
+    private readonly registerUser: IUseCase<Credentials, AuthResult>,
   ) {}
 
   // UC-001. POST answers 201 Created by default.
