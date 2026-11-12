@@ -20,6 +20,11 @@ const DOMAIN_ERRORS: Partial<Record<ErrorCode, HttpError>> = {
     error: 'Conflict',
     message: 'Username already taken',
   },
+  [ErrorCode.InvalidCredentials]: {
+    statusCode: 401,
+    error: 'Unauthorized',
+    message: 'Invalid credentials',
+  },
 };
 
 // A code without an entry is a bug on our side: answer 500 without details.
