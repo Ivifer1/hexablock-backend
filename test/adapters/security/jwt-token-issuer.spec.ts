@@ -146,6 +146,34 @@ describe('JwtTokenIssuer.verify (UC-003, BR-003-1)', () => {
     },
   );
 
+  it('should_return_empty_when_subject_is_blank', async () => {
+    // Arrange: correctly signed and not expired, but the subject is spaces.
+    const token = await jwt.signAsync(
+      { sub: '   ', role: 'player' },
+      { expiresIn: 3600 },
+    );
+
+    // Act
+    const found = await issuer.verify(token);
+
+    // Assert
+    expect(found.isPresent()).toBe(false);
+  });
+
+  it('should_return_empty_when_token_has_no_expiry', async () => {
+    // Arrange: correctly signed, but it would never expire.
+    const token = await jwt.signAsync({
+      sub: '6730f1c2a1b2c3d4e5f60718',
+      role: 'player',
+    });
+
+    // Act
+    const found = await issuer.verify(token);
+
+    // Assert
+    expect(found.isPresent()).toBe(false);
+  });
+
   it('should_return_empty_when_token_has_no_subject', async () => {
     // Arrange: correctly signed, but not one of our access tokens.
     const token = await jwt.signAsync({ role: 'player' });

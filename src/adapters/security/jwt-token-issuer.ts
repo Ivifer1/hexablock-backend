@@ -1,11 +1,11 @@
 import { JwtService } from '@nestjs/jwt';
 import {
   AccessToken,
+  AuthUser,
   ITokenIssuer,
 } from '../../application/ports/token-issuer.js';
 import { Optional } from '../../domain/shared/optional.js';
 import { User } from '../../domain/user/user.js';
-import type { AuthUser } from '../http/auth/auth-user.js';
 
 // The only algorithm accepted: tokens signed any other way (or unsigned,
 // "alg: none") are rejected even if the signature matches.
@@ -40,8 +40,15 @@ export class JwtTokenIssuer implements ITokenIssuer {
         token,
         { algorithms: [ALGORITHM] },
       );
-      const { sub, role } = payload;
-      if (typeof sub !== 'string' || sub === '' || typeof role !== 'string') {
+      const { sub, role, exp } = payload;
+      // Only our own access tokens: a subject that is not blank, a role and
+      // an expiry (a token without "exp" would never expire).
+      if (
+        typeof sub !== 'string' ||
+        sub.trim() === '' ||
+        typeof role !== 'string' ||
+        typeof exp !== 'number'
+      ) {
         return Optional.empty();
       }
       return Optional.of({ id: sub, role });
