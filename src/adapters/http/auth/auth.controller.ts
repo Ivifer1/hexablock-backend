@@ -15,7 +15,7 @@ import type {
 import type { CurrentUserInput } from '../../../application/use-cases/get-current-user.use-case.js';
 import type { User } from '../../../domain/user/user.js';
 import { UserId } from '../../../domain/user/user-id.js';
-import type { AuthUser } from './auth-user.js';
+import type { AuthUser } from '../../../application/ports/token-issuer.js';
 import {
   AuthResponse,
   toAuthResponse,

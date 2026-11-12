@@ -3,7 +3,7 @@ import type { Request } from 'express';
 import { DomainError } from '../../../domain/shared/domain-error.js';
 import { ErrorCode } from '../../../domain/shared/error-code.js';
 import { JwtTokenIssuer } from '../../security/jwt-token-issuer.js';
-import type { AuthUser } from './auth-user.js';
+import type { AuthUser } from '../../../application/ports/token-issuer.js';
 
 // Where the guard leaves the authenticated user for @CurrentUser().
 export const AUTH_USER_KEY = 'authUser';

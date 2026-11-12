@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { Request } from 'express';
-import type { AuthUser } from './auth-user.js';
+import type { AuthUser } from '../../../application/ports/token-issuer.js';
 import { AUTH_USER_KEY } from './jwt-auth.guard.js';
 
 // Hands a controller method the user that JwtAuthGuard authenticated. Only
