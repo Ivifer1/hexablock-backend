@@ -74,7 +74,7 @@ Roles: `player` (default) and `admin`. The first admin is created by a setup scr
 ```
 
 - `username`: 3–20 characters, lowercase letters, digits and `_`. Unique.
-- `password`: at least 8 characters.
+- `password`: at least 8 characters (an emoji counts as one).
 
 `201`:
 
@@ -86,7 +86,7 @@ Roles: `player` (default) and `admin`. The first admin is created by a setup scr
 }
 ```
 
-`expiresIn` is in seconds (default 7 days, configurable). Errors: `400`, `409` (username taken).
+`expiresIn` is in seconds (default 7 days, configurable up to 30 days). Errors: `400`, `409` (username taken).
 
 #### `POST /auth/login`
 

@@ -1,5 +1,7 @@
 import { Model, Types } from 'mongoose';
 import { IUserRepository } from '../../../application/ports/user-repository.js';
+import { DomainError } from '../../../domain/shared/domain-error.js';
+import { ErrorCode } from '../../../domain/shared/error-code.js';
 import { Optional } from '../../../domain/shared/optional.js';
 import { User } from '../../../domain/user/user.js';
 import { UserId } from '../../../domain/user/user-id.js';
@@ -35,8 +37,34 @@ export class MongoUserRepository implements IUserRepository {
 
   async save(user: User): Promise<void> {
     const doc = UserMapper.toDocument(user);
-    await this.model
-      .replaceOne({ _id: doc._id }, doc, { upsert: true })
-      .exec();
+    try {
+      await this.model
+        .replaceOne({ _id: doc._id }, doc, { upsert: true })
+        .exec();
+    } catch (error) {
+      if (isDuplicateUsername(error)) {
+        throw new DomainError(ErrorCode.UsernameTaken);
+      }
+      throw error;
+    }
   }
+}
+
+// MongoDB reports a broken unique index with code 11000 and the index keys.
+const DUPLICATE_KEY = 11000;
+
+function isDuplicateUsername(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false;
+  }
+  const { code, keyPattern } = error as {
+    code?: unknown;
+    keyPattern?: unknown;
+  };
+  return (
+    code === DUPLICATE_KEY &&
+    typeof keyPattern === 'object' &&
+    keyPattern !== null &&
+    'username' in keyPattern
+  );
 }

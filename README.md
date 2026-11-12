@@ -51,10 +51,22 @@ Prerequisites: Node.js 24, npm and a MongoDB server (local or hosted).
 
 ```bash
 npm install
-cp .env.example .env   # then set MONGODB_URI to your database
+cp .env.example .env   # then set MONGODB_URI and JWT_SECRET
 npm run start:dev   # http://localhost:3000 (set PORT to change it)
 curl localhost:3000/health   # {"status":"ok"}
+curl -X POST localhost:3000/api/v1/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"ivifer","password":"correct-horse"}'
 ```
+
+| Variable | Required | Meaning |
+| --- | --- | --- |
+| `MONGODB_URI` | yes | MongoDB connection string |
+| `JWT_SECRET` | yes | Secret that signs the access tokens, at least 32 bytes; the app does not start without it |
+| `JWT_EXPIRES_IN` | no | Token lifetime in seconds (default `604800`, 7 days; at most `2592000`, 30 days) |
+| `PORT` | no | HTTP port (default `3000`) |
+
+Every route lives under `/api/v1` except `GET /health`. The full contract is in `docs/specs/api-contract.md`.
 
 ## Tests
 

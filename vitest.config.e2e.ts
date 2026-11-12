@@ -9,6 +9,9 @@ export default defineConfig({
     include: ['**/*.e2e-spec.ts', '**/*.int-spec.ts'],
     // One in-memory MongoDB for the whole run; each worker gets its URI.
     globalSetup: ['./test/support/mongo-memory.global-setup.ts'],
-    setupFiles: ['./test/support/mongo-memory.setup.ts'],
+    setupFiles: [
+      './test/support/mongo-memory.setup.ts',
+      './test/support/auth.setup.ts',
+    ],
   },
 });

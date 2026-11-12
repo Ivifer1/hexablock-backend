@@ -10,6 +10,9 @@ export interface UserDocument {
   createdAt: Date;
 }
 
+// Name under which the model is registered in Mongoose.
+export const USER_MODEL = 'User';
+
 export const UserSchema = new Schema<UserDocument>(
   {
     _id: { type: String, required: true },

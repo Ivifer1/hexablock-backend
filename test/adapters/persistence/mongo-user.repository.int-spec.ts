@@ -5,6 +5,8 @@ import {
   UserDocument,
   UserSchema,
 } from '../../../src/adapters/persistence/mongo/user.schema.js';
+import { DomainError } from '../../../src/domain/shared/domain-error.js';
+import { ErrorCode } from '../../../src/domain/shared/error-code.js';
 import { PasswordHash } from '../../../src/domain/user/password-hash.js';
 import { Role } from '../../../src/domain/user/role.js';
 import { User } from '../../../src/domain/user/user.js';
@@ -99,7 +101,7 @@ describe('MongoUserRepository (integration, issue #16)', () => {
     expect(found.isPresent()).toBe(false);
   });
 
-  it('should_reject_second_user_when_username_is_taken', async () => {
+  it('should_throw_username_taken_when_username_is_taken', async () => {
     // Arrange
     await repository.save(newUser('ivifer'));
     const duplicate = newUser('ivifer');
@@ -108,7 +110,10 @@ describe('MongoUserRepository (integration, issue #16)', () => {
     const save = repository.save(duplicate);
 
     // Assert
-    await expect(save).rejects.toThrow();
+    await expect(save).rejects.toBeInstanceOf(DomainError);
+    await expect(save).rejects.toMatchObject({
+      code: ErrorCode.UsernameTaken,
+    });
     expect(await model.countDocuments({ username: 'ivifer' })).toBe(1);
   });
 
