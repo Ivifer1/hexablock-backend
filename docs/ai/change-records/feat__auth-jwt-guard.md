@@ -100,6 +100,18 @@ Built as proposed (the three diagram differences were approved with the proposal
 - `UserResponse`/`toUserResponse` are shared by `GET /auth/me` and the `user` field of register/login responses.
 - `RolesGuard` (403) is not included: no admin route exists yet; it comes with the levels endpoints.
 
+### Fixes after the independent security review (2026-11-12)
+Verdict: approve with notes. Verified by the reviewer: more than 20 bypass attempts (alg none, HS512/HS384, RS256,
+tampered role, wrong secret, expired, future nbf, header variants, token in query or cookie, deleted user) all got the
+same 401 body; `/auth/me` returns the stored role, not the token's. Ivifer1 approved fixing three items:
+1. A signed token with a blank `sub` ("   ") gave 500: `verify` now rejects a subject that is blank after trimming.
+2. A signed token without `exp` never expired: `verify` now requires a numeric `exp` (BR-003-1).
+3. `AuthUser` moved from `adapters/http/auth` to `application/ports/token-issuer.ts`, next to `ITokenIssuer`, so the
+   security adapter no longer imports from the HTTP adapter. Diagram: `AuthUser` moves from tab B4 to tab B3.
+Recorded for later: the role inside a token stays as issued until it expires (up to 30 days), so the future
+`RolesGuard` should read the role from the repository, not from the token. Not fixed here: the error body echoes the
+query string in `path` (pre-existing, goes to #20).
+
 ## Verification
 - RED first: 9 `verify` unit tests and the use case suite failed, and the 3 e2e tests failed (404).
 - `npm test`: 98 passed. `npm run test:e2e`: 24 passed. `npm run typecheck`, `npm run lint`, `npm run build`: clean.
@@ -111,6 +123,8 @@ Built as proposed (the three diagram differences were approved with the proposal
   - Route not guarded → the 3 e2e tests failed.
   - Any `Authorization` scheme accepted → `should_return_same_401_when_token_is_missing_malformed_or_expired` failed.
 - Register and login e2e tests still pass unchanged.
+- After the review fixes: RED first (2 new tests), then `npm test`: 100 passed, `npm run test:e2e`: 24 passed;
+  breaking each new rule on purpose (blank subject, no expiry) made its test fail.
 
 ## AI usage
 - Tool and model: Claude Code (Claude Opus 5.5).
