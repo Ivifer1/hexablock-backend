@@ -60,6 +60,7 @@ curl -X POST localhost:3000/api/v1/auth/register \
 curl -X POST localhost:3000/api/v1/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"username":"ivifer","password":"correct-horse"}'
+curl localhost:3000/api/v1/auth/me -H "Authorization: Bearer <accessToken>"
 ```
 
 | Variable | Required | Meaning |
