@@ -1,4 +1,5 @@
-import { Catch } from '@nestjs/common';
+import { STATUS_CODES } from 'node:http';
+import { Catch, HttpException, HttpStatus } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type { IClock } from '../../application/ports/clock.js';
@@ -28,16 +29,23 @@ const UNEXPECTED: HttpError = {
   message: 'Internal server error',
 };
 
-// Writes the error body of the API contract for the errors of our own code.
+// Fixed messages for framework errors (malformed JSON, body too large...).
+// The framework's own message is never sent: it can echo part of the input.
+const FRAMEWORK_MESSAGES: Partial<Record<number, string>> = {
+  [HttpStatus.BAD_REQUEST]: 'Invalid request',
+  [HttpStatus.PAYLOAD_TOO_LARGE]: 'Request body too large',
+};
+
+type HandledError = RequestValidationError | DomainError | HttpException;
+
+// Writes the error body of the API contract for our own errors and for the
+// framework's HTTP errors, so every error has the same shape (NFR-002).
 // Controllers and use cases only throw; the HTTP shape lives here.
-@Catch(RequestValidationError, DomainError)
+@Catch(RequestValidationError, DomainError, HttpException)
 export class HttpErrorFilter implements ExceptionFilter {
   constructor(private readonly clock: IClock) {}
 
-  catch(
-    exception: RequestValidationError | DomainError,
-    host: ArgumentsHost,
-  ): void {
+  catch(exception: HandledError, host: ArgumentsHost): void {
     const http = host.switchToHttp();
     const request = http.getRequest<Request>();
     const response = http.getResponse<Response>();
@@ -54,7 +62,7 @@ export class HttpErrorFilter implements ExceptionFilter {
   }
 
   private describe(
-    exception: RequestValidationError | DomainError,
+    exception: HandledError,
   ): HttpError & { details?: RequestValidationError['details'] } {
     if (exception instanceof RequestValidationError) {
       return {
@@ -64,6 +72,23 @@ export class HttpErrorFilter implements ExceptionFilter {
         details: exception.details,
       };
     }
+    if (exception instanceof HttpException) {
+      return describeFrameworkError(exception);
+    }
     return DOMAIN_ERRORS[exception.code] ?? UNEXPECTED;
   }
+}
+
+function describeFrameworkError(exception: HttpException): HttpError {
+  const statusCode = exception.getStatus();
+  if (statusCode >= 500) {
+    return UNEXPECTED;
+  }
+  // The standard reason phrase ("Payload Too Large"): never user input.
+  const error = STATUS_CODES[statusCode] ?? 'Error';
+  return {
+    statusCode,
+    error,
+    message: FRAMEWORK_MESSAGES[statusCode] ?? error,
+  };
 }

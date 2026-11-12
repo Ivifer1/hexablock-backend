@@ -142,6 +142,46 @@ describe('POST /api/v1/auth/register (e2e, UC-001)', () => {
     expect(await connection.collection('users').countDocuments()).toBe(1);
   });
 
+  it('should_return_400_in_contract_shape_without_echoing_input_when_json_is_malformed', async () => {
+    // Arrange
+    const body = '{"username":"secret-probe"';
+
+    // Act
+    const response = await request(app.getHttpServer())
+      .post('/api/v1/auth/register')
+      .set('Content-Type', 'application/json')
+      .send(body);
+
+    // Assert
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({
+      statusCode: 400,
+      error: 'Bad Request',
+      message: 'Invalid request',
+      path: '/api/v1/auth/register',
+      timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T.*Z$/),
+    });
+    expect(JSON.stringify(response.body)).not.toContain('secret-probe');
+  });
+
+  it('should_return_413_in_contract_shape_when_body_is_too_large', async () => {
+    // Arrange: the default JSON body limit is 100 kB.
+    const body = { username: 'ivifer', password: 'x'.repeat(200 * 1024) };
+
+    // Act
+    const response = await register(body);
+
+    // Assert
+    expect(response.status).toBe(413);
+    expect(response.body).toEqual({
+      statusCode: 413,
+      error: 'Payload Too Large',
+      message: 'Request body too large',
+      path: '/api/v1/auth/register',
+      timestamp: expect.stringMatching(/^\d{4}-\d{2}-\d{2}T.*Z$/),
+    });
+  });
+
   it('should_keep_health_outside_the_api_prefix_when_app_is_configured', async () => {
     // Arrange: the configured application (beforeAll).
 
