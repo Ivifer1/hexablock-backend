@@ -62,8 +62,8 @@ curl -X POST localhost:3000/api/v1/auth/register \
 | Variable | Required | Meaning |
 | --- | --- | --- |
 | `MONGODB_URI` | yes | MongoDB connection string |
-| `JWT_SECRET` | yes | Secret that signs the access tokens; the app does not start without it |
-| `JWT_EXPIRES_IN` | no | Token lifetime in seconds (default `604800`, 7 days) |
+| `JWT_SECRET` | yes | Secret that signs the access tokens, at least 32 bytes; the app does not start without it |
+| `JWT_EXPIRES_IN` | no | Token lifetime in seconds (default `604800`, 7 days; at most `2592000`, 30 days) |
 | `PORT` | no | HTTP port (default `3000`) |
 
 Every route lives under `/api/v1` except `GET /health`. The full contract is in `docs/specs/api-contract.md`.

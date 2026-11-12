@@ -126,6 +126,22 @@ Built as proposed, with these details and deviations:
   and `JWT_EXPIRES_IN` there by hand. README documents both.
 - OpenAPI for this endpoint arrives with #21 (Swagger is not set up yet).
 
+### Fixes after the independent security review (2026-11-11)
+Verdict of the review: approve with notes. Ivifer1 approved fixing items 1, 3, 4, 5 and 6 in this PR.
+1. scrypt cost raised to the OWASP minimum (N=2^17, r=8, p=1, `maxmem` 256 MiB) and stored inside the hash:
+   `scrypt$<N>$<r>$<p>$<salt hex>$<key hex>`, so login (#18) reads the cost and the cost can be raised later
+   without a migration. A hash now takes about 170 ms instead of 22 ms.
+3. `JWT_SECRET` must have at least 32 bytes (RFC 7518, HS256); shorter secrets stop the app at startup.
+4. `JWT_EXPIRES_IN` is capped at 2592000 seconds (30 days) and must be a safe integer. The cap is a new rule
+   (BR-001-6 and the contract updated).
+5. `HttpErrorFilter` also catches NestJS `HttpException`s (malformed JSON → 400, body over 100 kB → 413), so they
+   follow the contract's error shape. It sends a fixed message and the standard reason phrase from
+   `node:http` `STATUS_CODES`, never the framework's message, which could echo part of the input. 5xx answers
+   the generic 500. Errors that are not `HttpException` keep NestJS's default handling until #20.
+6. `Password` counts characters with `Intl.Segmenter` (graphemes): an emoji, even a composed one, is one character.
+Not fixed here: item 2, a rate limit on `/auth/*`, needs a team decision (a hand-written guard or the new
+dependency `@nestjs/throttler`) and goes to its own issue.
+
 ## Verification
 - RED first: before `src/` changed, six suites failed with "Cannot find module" and the integration test
   `should_throw_username_taken_when_username_is_taken` failed (the repository threw the raw MongoDB error).
@@ -140,6 +156,14 @@ Built as proposed, with these details and deviations:
   - `/health` put under the prefix → `should_keep_health_outside_the_api_prefix_when_app_is_configured` failed.
 - Not verified: the server was not started against a real MongoDB; the e2e suite covers the same wiring in memory.
 - design-reviewer subagent: not run; the diff was checked against `.claude/rules/`.
+- Independent security review (separate agent, read-only, probed the running app): approve with notes.
+- After the review fixes: RED first (8 new tests failed), then `npm test`: 70 passed, `npm run test:e2e`: 17 passed,
+  typecheck, lint and build clean. Rules broken on purpose, each restored afterwards:
+  - scrypt N lowered to 2^14 → `should_store_owasp_cost_parameters_when_hashed` failed.
+  - Minimum secret length lowered to 1 → `should_throw_when_jwt_secret_is_shorter_than_32_bytes` failed.
+  - Expiry cap removed → `should_throw_when_jwt_expiry_exceeds_30_days` failed.
+  - Length counted in UTF-16 units → both emoji password tests failed.
+  - `HttpException` not caught, or the framework message echoed → the malformed-JSON and 413 e2e tests failed.
 
 ## AI usage
 - Tool and model: Claude Code (Claude Opus 5.5 for the spec and proposal, Claude Fable 5.2 for tests and code).

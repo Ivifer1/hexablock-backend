@@ -38,12 +38,14 @@
 
 ## Business rules
 - BR-001-1: A username has 3 to 20 characters, and each character is a lowercase letter, a digit or `_`.
-- BR-001-2: A password has at least 8 characters.
+- BR-001-2: A password has at least 8 characters, counted as a person sees them (an emoji is one character).
 - BR-001-3: Usernames are unique.
 - BR-001-4: A new user always has the role `player`; registration never creates an `admin`.
 - BR-001-5: The password is stored only as a hash; the response never contains the password or the hash.
-- BR-001-6: The access token lasts 604800 seconds (7 days) unless configuration sets another value.
+- BR-001-6: The access token lasts 604800 seconds (7 days) unless configuration sets another value, which cannot exceed
+  2592000 seconds (30 days).
 
 ## Open questions
-- The contract sets no maximum password length. A maximum (for example 128) would limit the cost of hashing a huge
-  input. Options: no maximum (contract as is), or add one to the contract.
+- Answered by the security review (2026-11-11): a maximum password length is not needed to limit hashing cost.
+  scrypt takes the same time for a 99 kB password as for 10 characters, and the 100 kB body limit already caps
+  the input. A maximum remains optional.
