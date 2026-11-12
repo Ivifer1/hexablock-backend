@@ -3,7 +3,10 @@ import { JwtModule, JwtService } from '@nestjs/jwt';
 import { getModelToken, MongooseModule } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { AuthController } from '../../adapters/http/auth/auth.controller.js';
-import { REGISTER_USE_CASE } from '../../adapters/http/auth/auth.tokens.js';
+import {
+  LOGIN_USE_CASE,
+  REGISTER_USE_CASE,
+} from '../../adapters/http/auth/auth.tokens.js';
 import { MongoUserRepository } from '../../adapters/persistence/mongo/mongo-user.repository.js';
 import {
   USER_MODEL,
@@ -17,6 +20,7 @@ import { IClock } from '../../application/ports/clock.js';
 import { IPasswordHasher } from '../../application/ports/password-hasher.js';
 import { ITokenIssuer } from '../../application/ports/token-issuer.js';
 import { IUserRepository } from '../../application/ports/user-repository.js';
+import { LoginUseCase } from '../../application/use-cases/login.use-case.js';
 import { RegisterUseCase } from '../../application/use-cases/register.use-case.js';
 import { readAuthConfig } from '../config/auth.config.js';
 import {
@@ -63,6 +67,15 @@ import {
         tokens: ITokenIssuer,
       ) => new RegisterUseCase(users, hasher, clock, tokens),
       inject: [USER_REPOSITORY, PASSWORD_HASHER, CLOCK, TOKEN_ISSUER],
+    },
+    {
+      provide: LOGIN_USE_CASE,
+      useFactory: (
+        users: IUserRepository,
+        hasher: IPasswordHasher,
+        tokens: ITokenIssuer,
+      ) => new LoginUseCase(users, hasher, tokens),
+      inject: [USER_REPOSITORY, PASSWORD_HASHER, TOKEN_ISSUER],
     },
   ],
 })

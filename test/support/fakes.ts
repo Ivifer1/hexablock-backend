@@ -45,8 +45,17 @@ export class InMemoryUserRepository implements IUserRepository {
 }
 
 export class FakePasswordHasher implements IPasswordHasher {
+  hashCalls = 0;
+  verifyCalls = 0;
+
   hash(password: Password): Promise<PasswordHash> {
+    this.hashCalls += 1;
     return Promise.resolve(PasswordHash.of(`hashed:${password.toString()}`));
+  }
+
+  verify(password: Password, hash: PasswordHash): Promise<boolean> {
+    this.verifyCalls += 1;
+    return Promise.resolve(hash.toString() === `hashed:${password.toString()}`);
   }
 }
 

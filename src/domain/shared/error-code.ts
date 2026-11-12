@@ -6,4 +6,5 @@ export enum ErrorCode {
   InvalidPasswordHash = 'INVALID_PASSWORD_HASH',
   InvalidPassword = 'INVALID_PASSWORD',
   UsernameTaken = 'USERNAME_TAKEN',
+  InvalidCredentials = 'INVALID_CREDENTIALS',
 }

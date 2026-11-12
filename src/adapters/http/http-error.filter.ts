@@ -1,5 +1,5 @@
 import { STATUS_CODES } from 'node:http';
-import { Catch, HttpException, HttpStatus } from '@nestjs/common';
+import { Catch, HttpException, HttpStatus, Logger } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import type { IClock } from '../../application/ports/clock.js';
@@ -20,6 +20,11 @@ const DOMAIN_ERRORS: Partial<Record<ErrorCode, HttpError>> = {
     error: 'Conflict',
     message: 'Username already taken',
   },
+  [ErrorCode.InvalidCredentials]: {
+    statusCode: 401,
+    error: 'Unauthorized',
+    message: 'Invalid credentials',
+  },
 };
 
 // A code without an entry is a bug on our side: answer 500 without details.
@@ -36,16 +41,18 @@ const FRAMEWORK_MESSAGES: Partial<Record<number, string>> = {
   [HttpStatus.PAYLOAD_TOO_LARGE]: 'Request body too large',
 };
 
-type HandledError = RequestValidationError | DomainError | HttpException;
-
-// Writes the error body of the API contract for our own errors and for the
-// framework's HTTP errors, so every error has the same shape (NFR-002).
-// Controllers and use cases only throw; the HTTP shape lives here.
-@Catch(RequestValidationError, DomainError, HttpException)
+// Writes the error body of the API contract for every error: our own, the
+// framework's HTTP errors and unexpected ones, so all of them have the same
+// shape (NFR-002). Controllers and use cases only throw; the HTTP shape lives
+// here. Unexpected errors answer a generic 500; their details only go to the
+// server log, never to the client.
+@Catch()
 export class HttpErrorFilter implements ExceptionFilter {
+  private readonly logger = new Logger(HttpErrorFilter.name);
+
   constructor(private readonly clock: IClock) {}
 
-  catch(exception: HandledError, host: ArgumentsHost): void {
+  catch(exception: unknown, host: ArgumentsHost): void {
     const http = host.switchToHttp();
     const request = http.getRequest<Request>();
     const response = http.getResponse<Response>();
@@ -62,7 +69,7 @@ export class HttpErrorFilter implements ExceptionFilter {
   }
 
   private describe(
-    exception: HandledError,
+    exception: unknown,
   ): HttpError & { details?: RequestValidationError['details'] } {
     if (exception instanceof RequestValidationError) {
       return {
@@ -75,7 +82,14 @@ export class HttpErrorFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       return describeFrameworkError(exception);
     }
-    return DOMAIN_ERRORS[exception.code] ?? UNEXPECTED;
+    if (exception instanceof DomainError && DOMAIN_ERRORS[exception.code]) {
+      return DOMAIN_ERRORS[exception.code] as HttpError;
+    }
+    // A bug or an infrastructure failure: keep the details on the server.
+    this.logger.error(
+      exception instanceof Error ? exception.stack : String(exception),
+    );
+    return UNEXPECTED;
   }
 }
 
