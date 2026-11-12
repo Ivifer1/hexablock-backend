@@ -6,20 +6,39 @@ describe('ScryptPasswordHasher (UC-001, BR-001-5)', () => {
   const hasher = new ScryptPasswordHasher();
   const password = Password.of('correct-horse');
 
-  it('should_produce_hash_that_matches_password_when_recomputed_with_its_salt', async () => {
-    // Arrange: the stored format is scrypt$<salt hex>$<key hex>.
+  it('should_store_owasp_cost_parameters_when_hashed', async () => {
+    // Arrange: stored format is scrypt$N$r$p$<salt hex>$<key hex>.
 
     // Act
     const hash = await hasher.hash(password);
 
     // Assert
-    const [algorithm, salt, key] = hash.toString().split('$');
+    const [algorithm, n, r, p] = hash.toString().split('$');
+    expect(algorithm).toBe('scrypt');
+    expect({ n: Number(n), r: Number(r), p: Number(p) }).toEqual({
+      n: 131072,
+      r: 8,
+      p: 1,
+    });
+  });
+
+  it('should_produce_hash_that_matches_password_when_recomputed_with_stored_parameters', async () => {
+    // Arrange + Act
+    const hash = await hasher.hash(password);
+
+    // Assert
+    const [, n, r, p, salt, key] = hash.toString().split('$');
     const recomputed = scryptSync(
       password.toString(),
       Buffer.from(salt, 'hex'),
       key.length / 2,
+      {
+        N: Number(n),
+        r: Number(r),
+        p: Number(p),
+        maxmem: 256 * 1024 * 1024,
+      },
     ).toString('hex');
-    expect(algorithm).toBe('scrypt');
     expect(recomputed).toBe(key);
   });
 
