@@ -57,6 +57,9 @@ curl localhost:3000/health   # {"status":"ok"}
 curl -X POST localhost:3000/api/v1/auth/register \
   -H 'Content-Type: application/json' \
   -d '{"username":"ivifer","password":"correct-horse"}'
+curl -X POST localhost:3000/api/v1/auth/login \
+  -H 'Content-Type: application/json' \
+  -d '{"username":"ivifer","password":"correct-horse"}'
 ```
 
 | Variable | Required | Meaning |
