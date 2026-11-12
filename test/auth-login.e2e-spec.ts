@@ -85,6 +85,34 @@ describe('POST /api/v1/auth/login (e2e, UC-002)', () => {
     expect(byUsername.body).toEqual(expected);
   });
 
+  it('should_return_500_in_contract_shape_without_details_when_stored_hash_is_corrupt', async () => {
+    // Arrange: a user whose stored hash cannot be read (unexpected error).
+    await connection.collection('users').insertOne({
+      _id: 'aaaaaaaaaaaaaaaaaaaaaaaa' as never,
+      username: 'corrupt',
+      passwordHash: 'bcrypt$not-ours',
+      role: 'player',
+      createdAt: new Date('2026-11-12T00:00:00.000Z'),
+    });
+
+    // Act
+    const response = await login({
+      username: 'corrupt',
+      password: 'correct-horse',
+    });
+
+    // Assert
+    expect(response.status).toBe(500);
+    expect(response.body).toEqual({
+      statusCode: 500,
+      error: 'Internal Server Error',
+      message: 'Internal server error',
+      path: '/api/v1/auth/login',
+      timestamp,
+    });
+    expect(JSON.stringify(response.body)).not.toContain('bcrypt');
+  });
+
   it('should_return_400_with_details_when_body_is_invalid', async () => {
     // Arrange
     const body = { username: 'Iv' };
