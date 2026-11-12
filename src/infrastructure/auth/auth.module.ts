@@ -4,9 +4,11 @@ import { getModelToken, MongooseModule } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { AuthController } from '../../adapters/http/auth/auth.controller.js';
 import {
+  GET_CURRENT_USER_USE_CASE,
   LOGIN_USE_CASE,
   REGISTER_USE_CASE,
 } from '../../adapters/http/auth/auth.tokens.js';
+import { JwtAuthGuard } from '../../adapters/http/auth/jwt-auth.guard.js';
 import { MongoUserRepository } from '../../adapters/persistence/mongo/mongo-user.repository.js';
 import {
   USER_MODEL,
@@ -20,6 +22,7 @@ import { IClock } from '../../application/ports/clock.js';
 import { IPasswordHasher } from '../../application/ports/password-hasher.js';
 import { ITokenIssuer } from '../../application/ports/token-issuer.js';
 import { IUserRepository } from '../../application/ports/user-repository.js';
+import { GetCurrentUserUseCase } from '../../application/use-cases/get-current-user.use-case.js';
 import { LoginUseCase } from '../../application/use-cases/login.use-case.js';
 import { RegisterUseCase } from '../../application/use-cases/register.use-case.js';
 import { readAuthConfig } from '../config/auth.config.js';
@@ -49,8 +52,10 @@ import {
         new MongoUserRepository(model),
       inject: [getModelToken(USER_MODEL)],
     },
+    // One JwtTokenIssuer: use cases see it as the ITokenIssuer port, the
+    // guard uses it to verify tokens.
     {
-      provide: TOKEN_ISSUER,
+      provide: JwtTokenIssuer,
       useFactory: (jwt: JwtService) =>
         new JwtTokenIssuer(
           jwt,
@@ -58,6 +63,8 @@ import {
         ),
       inject: [JwtService],
     },
+    { provide: TOKEN_ISSUER, useExisting: JwtTokenIssuer },
+    JwtAuthGuard,
     {
       provide: REGISTER_USE_CASE,
       useFactory: (
@@ -77,6 +84,13 @@ import {
       ) => new LoginUseCase(users, hasher, tokens),
       inject: [USER_REPOSITORY, PASSWORD_HASHER, TOKEN_ISSUER],
     },
+    {
+      provide: GET_CURRENT_USER_USE_CASE,
+      useFactory: (users: IUserRepository) => new GetCurrentUserUseCase(users),
+      inject: [USER_REPOSITORY],
+    },
   ],
+  // Other modules protect their 🔒 routes with the same guard.
+  exports: [JwtAuthGuard, JwtTokenIssuer],
 })
 export class AuthModule {}
