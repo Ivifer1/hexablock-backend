@@ -57,13 +57,13 @@ every board. A radius-2 hexagon is the 19 cells listed in the Hexa Sort example.
 | `pieces` | array | The fixed set of pieces of the level. |
 | `pieces[].id` | string | Piece id, unique within the level. |
 | `pieces[].cells` | array of coordinates | Piece shape, relative to its own origin `[0, 0]`, in the board topology. Rotations are computed by the topology, not stored. |
-| `stars` | array | Star thresholds, from the best result down. |
+| `stars` | array | Required; zero, one, or two star thresholds, from the best result down. |
 | `stars[].stars` | integer | Stars awarded: `3` or `2`. |
 | `stars[].maxMoves` | integer ≥ 1 | Maximum moves to earn them. |
 | `stars[].maxSeconds` | integer ≥ 1 | Maximum seconds to earn them. |
 
 Stars: the player earns the first threshold whose `maxMoves` **and** `maxSeconds` are both met. Completing the level
-always earns at least 1 star. A move is each place, remove or rotate action.
+always earns at least 1 star, including when the threshold list is empty. A move is each place, remove or rotate action.
 
 ### Hexa Sort section (`sort`)
 
@@ -107,6 +107,6 @@ Hexa Sort:
 ## Adding a variant
 
 1. Add its section (for example `fill`) and document it here.
-2. Register a validator for its `gameId` in the backend, and its level builder step in the client.
+2. Register a validator for its `gameId` in the backend levels composition factory, and its level builder step in the client.
 
 The common part and the existing variant sections do not change.
