@@ -100,7 +100,7 @@ Equal area is necessary, not sufficient: whether a level can be solved is checke
 
 Hexa Sort:
 1. `goal.clearedStacks` is an integer ≥ 1.
-2. `colors` has at least 2 unique ids.
+2. `colors` has at least 2 ids and contains no duplicates.
 3. `1 ≤ stackHeight.min ≤ stackHeight.max < 10` (a stack of 10 is cleared).
 4. `seed`, when present, is an integer.
 
