@@ -22,4 +22,6 @@ export enum ErrorCode {
   InvalidTopologyId = 'INVALID_TOPOLOGY_ID',
   InvalidSectionKey = 'INVALID_SECTION_KEY',
   InvalidCount = 'INVALID_COUNT',
+  InvalidFitSection = 'INVALID_FIT_SECTION',
+  InvalidSortSection = 'INVALID_SORT_SECTION',
 }
