@@ -7,10 +7,11 @@ export class RawCoord {
   private constructor(private readonly values: readonly number[]) {}
 
   static of(values: readonly number[]): RawCoord {
-    if (!values.every((value) => Number.isInteger(value))) {
+    const components = [...values];
+    if (!components.every((value) => Number.isSafeInteger(value))) {
       throw new DomainError(ErrorCode.InvalidCoordinate);
     }
-    return new RawCoord(Object.freeze([...values]));
+    return new RawCoord(Object.freeze(components));
   }
 
   equals(other: RawCoord): boolean {

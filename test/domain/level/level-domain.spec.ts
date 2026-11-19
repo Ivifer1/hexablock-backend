@@ -215,6 +215,63 @@ describe('Level value objects (FR-010, issue #28)', () => {
 });
 
 describe('Board and coordinates (FR-010, issue #28)', () => {
+  it.each(['all', 'first', 'last'])(
+    'should_throw_invalid_coordinate_when_components_are_missing (%s)',
+    (missing) => {
+      // Arrange
+      const values: number[] = [];
+      values.length = 2;
+      if (missing === 'first') values[1] = 0;
+      if (missing === 'last') values[0] = 0;
+      // Act + Assert
+      expectCode(() => RawCoord.of(values), ErrorCode.InvalidCoordinate);
+    },
+  );
+
+  it.each([Number.MAX_SAFE_INTEGER + 1, Number.MIN_SAFE_INTEGER - 1])(
+    'should_throw_invalid_coordinate_when_a_component_is_an_unsafe_integer (%s)',
+    (value) => {
+      // Arrange
+      const values = [value, 0];
+      // Act + Assert
+      expectCode(() => RawCoord.of(values), ErrorCode.InvalidCoordinate);
+    },
+  );
+
+  it.each([Number.MAX_SAFE_INTEGER, Number.MIN_SAFE_INTEGER])(
+    'should_preserve_coordinate_when_components_are_safe_boundary_integers (%s)',
+    (value) => {
+      // Arrange
+      const coordinate = RawCoord.of([value, 0]);
+      const offset = RawCoord.of([0, 0]);
+      // Act
+      const translated = coordinate.translated(offset);
+      // Assert
+      expect(translated.equals(coordinate)).toBe(true);
+      expect(coordinate.equals(RawCoord.of([value, 0]))).toBe(true);
+      expect(coordinate.size().equals(Count.of(2))).toBe(true);
+    },
+  );
+
+  it.each([
+    [Number.MAX_SAFE_INTEGER, 1],
+    [Number.MIN_SAFE_INTEGER, -1],
+  ])(
+    'should_throw_invalid_coordinate_when_translation_exceeds_safe_integer_range (%s, %s)',
+    (value, step) => {
+      // Arrange
+      const coordinate = RawCoord.of([value, 0]);
+      const offset = RawCoord.of([step, 0]);
+      // Act + Assert
+      expectCode(
+        () => coordinate.translated(offset),
+        ErrorCode.InvalidCoordinate,
+      );
+      expect(coordinate.equals(RawCoord.of([value, 0]))).toBe(true);
+      expect(offset.equals(RawCoord.of([step, 0]))).toBe(true);
+    },
+  );
+
   it('should_keep_coordinate_value_when_input_array_changes', () => {
     // Arrange
     const input = [-2, 1, 0];

@@ -203,3 +203,29 @@ claimed, and commits do not imply a push, PR or merge. Decide PR slicing before 
   ran checks and isolated deliberate rule-breaking probes, and synchronized local documentation and diagrams.
 - A read-only architect mapping and a read-only test-plan mapping informed the parent implementation.
 - The user manually approved the proposal before source changes; production `square` support remains deferred.
+
+
+## Coordinate validation follow-up (2026-11-18)
+
+- Ivifer1 authorized reproducing and correcting the two coordinate warnings after the native review was
+  approved and acknowledged. These are new follow-up changes, not a reopening of the approved candidate.
+- Root causes: `Array.every` skips holes, and `Number.isInteger` accepts integers outside JavaScript's safe range.
+- `RawCoord.of` now copies the input before checking every component with `Number.isSafeInteger`, then freezes
+  that same copy. Holes become `undefined` and fail at construction; no coordinate can retain an unsafe integer.
+- `translated` already delegates to `RawCoord.of`, so out-of-range results reuse the same domain error without
+  duplicated validation or geometry-specific rules. Valid coordinates, equality and defensive copying are preserved.
+- Added regressions for wholly and partially sparse arrays, positive/negative unsafe integers, safe boundaries,
+  and translation overflow. No public method signature, layer dependency or UML relationship changed.
+- Native review warnings about reciprocal topology neighbors and future serialization remain separate later work.
+- Verification: RED observed (7 failing regression cases, 66 passing); GREEN observed (73 focused tests).
+  All 184 unit/architecture tests and 25 e2e/integration tests pass, as do typecheck, warning-free lint and build.
+  Two isolated mutation probes were detected (3 sparse-array failures and 4 unsafe-integer/overflow failures);
+  the temporary copy was removed. Existing coordinate equality, dimension, translation and immutability tests pass.
+- No CLI command or option changed, so the command-level differential check does not apply.
+- Risk: none. This is the explicitly requested coordinate-validation correction, not a change to stored data,
+  security, concurrency or deployment; these domain models are not yet exposed by level endpoints.
+- Ivifer1 explicitly authorized one local follow-up commit; push and PR creation remain unauthorized.
+- Native assessment: medium risk, `review_due: false`, `under_budget`; no new review started.
+- Runtime boundary: N/A; this fix is domain-only and is not wired to any level endpoint.
+- Rollback boundary: this follow-up's RawCoord factory guard, its regression tests, and corresponding coordinate
+  constraint/change-record/AI-usage documentation; no unrelated level-domain behavior is included.
