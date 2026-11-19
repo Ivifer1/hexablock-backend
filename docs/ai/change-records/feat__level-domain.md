@@ -181,8 +181,21 @@ error-code members, preserving every existing member and the current partial HTT
   The web diagram keeps its interaction script unchanged. A static rendered preview was inspected; the user confirmed shared-diagram synchronization. Remote state was not independently inspected.
 - Native assessment and preflight both failed before transaction creation: `immutable_review_transport_unsupported`.
   The runtime reported `next_action: stop`, `mutation_outcome: not_started`, and `retry_safe: false`.
-  Review mode remains enabled; no approval receipt is claimed. No retry, mode toggle, commit, push or remote operation was performed.
-- Native risk remains high/unassessable until a supported session can assess it. Delivery slicing and commits remain pending.
+  Review mode remains enabled; no approval receipt is claimed. No retry, mode toggle, push or remote operation was performed. Local commits were subsequently authorized by the user.
+- Native risk remains high/unassessable until a supported session can assess it. PR delivery slicing remains pending; local commits follow the user-requested historical order.
+
+## Local commits
+
+The user explicitly requested local commits in the historical order: tests, implementation, then documentation.
+The first test snapshot is intentionally RED until the implementation commits are applied.
+
+- `c5336c0` — specify the common validation tests and retain the approved proposal.
+- `3b3fd71` — add typed level/board models and value objects.
+- `9ab884d` — add registered topology/section strategies and common validation.
+- Final documentation commit — record verification and AI usage; no source changes.
+
+Existing verification covers these unchanged source bytes. Native review remains unavailable; no receipt is
+claimed, and commits do not imply a push, PR or merge. Decide PR slicing before remote delivery.
 
 ## AI usage
 
