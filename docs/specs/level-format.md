@@ -38,8 +38,10 @@ A level has a **common part**, shared by every variant, and **one section named 
 
 ### Board: topology and cells
 
-`board.cells` lists every playable cell. A coordinate is an **array of integers** whose meaning is given by
-`board.topology`. The format never assumes hexagons: a new cell shape adds a topology id, not new fields.
+`board.cells` lists every playable cell. A coordinate is a **dense array of safe integers** whose meaning is given by
+`board.topology`. Each component must be between -9007199254740991 and 9007199254740991 (inclusive), so arithmetic
+never silently rounds a coordinate. Missing components are invalid; coordinate translations must also stay in this
+range. The format never assumes hexagons: a new cell shape adds a topology id, not new fields.
 
 | `topology` | Coordinate | Meaning |
 |---|---|---|
