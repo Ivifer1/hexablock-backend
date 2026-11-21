@@ -21,6 +21,10 @@ export class RawCoord {
     );
   }
 
+  toArray(): readonly number[] {
+    return Object.freeze([...this.values]);
+  }
+
   isOrigin(): boolean {
     return this.values.every((value) => value === 0);
   }

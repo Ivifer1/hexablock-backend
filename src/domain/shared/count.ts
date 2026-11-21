@@ -19,6 +19,10 @@ export class Count {
     return Count.of(this.value + other.value);
   }
 
+  toNumber(): number {
+    return this.value;
+  }
+
   equals(other: Count): boolean {
     return this.value === other.value;
   }
