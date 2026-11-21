@@ -33,3 +33,5 @@ export const LevelSchema = new Schema<LevelDocument>(
   },
   { collection: 'levels', versionKey: false, minimize: false },
 );
+
+LevelSchema.index({ gameId: 1, order: 1 }, { unique: true });

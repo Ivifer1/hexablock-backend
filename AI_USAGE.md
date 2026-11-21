@@ -20,6 +20,8 @@ TBD
 
 | 2026-11-19 | Per-variant level section validation (#29, FR-010) | Approve and start Fit and Sort validation | Codex drafted the proposal, implemented the topology-aware Fit and geometry-independent Sort strategies, and tested the approved rules | Ivifer1 confirmed duplicate color rejection and allowed zero to two star thresholds before manually approving the proposal |
 
+| 2026-11-20 | Level repository (#30, FR-010) | Approve persistence design without coupling domain to MongoDB | Implemented the repository port, Mongo adapter, typed section mappers, unique indexes and integration tests | Human approved boundary-only conversions and separate create/replace semantics; endpoints remain out of scope |
+
 ## Critical Evaluation
 
 TBD — estimated percentage of AI-assisted work and errors detected.
