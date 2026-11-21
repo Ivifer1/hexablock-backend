@@ -31,6 +31,10 @@ export class LevelValidator {
     ];
   }
 
+  assertSupportsLevels(gameId: GameId): void {
+    this.sectionFor(gameId);
+  }
+
   sectionKeyOf(gameId: GameId): SectionKey {
     return this.sectionFor(gameId).sectionKey();
   }
