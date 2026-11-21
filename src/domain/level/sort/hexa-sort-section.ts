@@ -13,6 +13,10 @@ export class ColorId {
     return new ColorId(value);
   }
 
+  toString(): string {
+    return this.value;
+  }
+
   equals(other: ColorId): boolean {
     return this.value === other.value;
   }
@@ -26,6 +30,10 @@ export class Seed {
       throw new DomainError(ErrorCode.InvalidSortSection);
     }
     return new Seed(value);
+  }
+
+  toNumber(): number {
+    return this.value;
   }
 
   equals(other: Seed): boolean {

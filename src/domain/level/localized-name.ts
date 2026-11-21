@@ -14,6 +14,10 @@ export class LocalizedName {
     return new LocalizedName(es, en);
   }
 
+  toRecord(): { readonly es: string; readonly en: string } {
+    return { es: this.es, en: this.en };
+  }
+
   equals(other: LocalizedName): boolean {
     return this.es === other.es && this.en === other.en;
   }

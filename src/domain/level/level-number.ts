@@ -11,6 +11,10 @@ export class LevelNumber {
     return new LevelNumber(raw);
   }
 
+  toNumber(): number {
+    return this.value;
+  }
+
   equals(other: LevelNumber): boolean {
     return this.value === other.value;
   }

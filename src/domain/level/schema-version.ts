@@ -11,6 +11,10 @@ export class SchemaVersion {
     return new SchemaVersion(raw);
   }
 
+  toNumber(): number {
+    return this.value;
+  }
+
   equals(other: SchemaVersion): boolean {
     return this.value === other.value;
   }

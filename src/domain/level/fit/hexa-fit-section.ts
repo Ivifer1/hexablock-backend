@@ -12,6 +12,10 @@ export class PieceId {
     return new PieceId(value);
   }
 
+  toString(): string {
+    return this.value;
+  }
+
   equals(other: PieceId): boolean {
     return this.value === other.value;
   }
