@@ -10,6 +10,7 @@ import {
 } from '../../adapters/persistence/mongo/level.schema.js';
 import type { ILevelRepository } from '../../application/ports/level-repository.js';
 import { GetLevelUseCase } from '../../application/use-cases/get-level.use-case.js';
+import { ListLevelsUseCase } from '../../application/use-cases/list-levels.use-case.js';
 import { LevelValidator } from '../../domain/level/level-validator.js';
 import {
   createLevelRepository,
@@ -34,6 +35,12 @@ readSchema.set('autoIndex', false);
       useFactory: (model: Model<LevelDocument>, validator: LevelValidator) =>
         createLevelRepository(model, validator),
       inject: [getModelToken(LEVEL_MODEL), LevelValidator],
+    },
+    {
+      provide: ListLevelsUseCase,
+      useFactory: (repository: ILevelRepository, validator: LevelValidator) =>
+        new ListLevelsUseCase(repository, validator),
+      inject: [LEVEL_REPOSITORY, LevelValidator],
     },
     {
       provide: GetLevelUseCase,

@@ -180,11 +180,13 @@ writing is admin only, so players cannot break the levels of everyone.
 
 #### `GET /levels?gameId=`
 
-`gameId` is required. `200`: `{ "items": [ <level>, ... ] }` ordered by `order`. Errors: `400`, `404`.
+`200`: `{ "items": [ <level>, ... ] }` ordered by `order`; a supported game with no stored levels returns
+`{ "items": [] }`. A missing, malformed, or repeated `gameId` yields `400`; an unknown game or a game that
+does not support levels yields `404`.
 
 #### `GET /levels/{id}`
 
-`200`: the level. Errors: `404`.
+`200`: the level. A malformed or non-existent level ID yields `404`.
 
 #### `POST /levels` 🔑
 
