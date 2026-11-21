@@ -11,6 +11,14 @@ export class Count {
     return new Count(raw);
   }
 
+  isLessThan(other: Count): boolean {
+    return this.value < other.value;
+  }
+
+  plus(other: Count): Count {
+    return Count.of(this.value + other.value);
+  }
+
   equals(other: Count): boolean {
     return this.value === other.value;
   }

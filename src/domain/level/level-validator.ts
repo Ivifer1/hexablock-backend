@@ -1,10 +1,9 @@
 import type { GameId } from '../game/game-id.js';
 import { DomainError } from '../shared/domain-error.js';
 import { ErrorCode } from '../shared/error-code.js';
-import type { BoardDefinition } from './board-definition.js';
+import { cellsConnected } from './cells-connected.js';
 import type { Level } from './level.js';
 import type { ILevelSectionValidator } from './level-section-validator.js';
-import type { RawCoord } from './raw-coord.js';
 import type { SectionKey } from './section-key.js';
 import type { TopologyId } from './topology-id.js';
 import type { IBoardTopology } from './topology/board-topology.js';
@@ -49,8 +48,10 @@ export class LevelValidator {
     ) {
       throw new DomainError(ErrorCode.InvalidBoard);
     }
-    this.checkConnectivity(level.board, topology);
-    section.validate(level);
+    if (!cellsConnected(level.board.cells, topology)) {
+      throw new DomainError(ErrorCode.BoardNotConnected);
+    }
+    section.validate(level, topology);
   }
 
   private sectionFor(gameId: GameId): ILevelSectionValidator {
@@ -65,26 +66,5 @@ export class LevelValidator {
       if (topology.id().equals(id)) return topology;
     }
     throw new DomainError(ErrorCode.UnknownTopology);
-  }
-
-  private checkConnectivity(
-    board: BoardDefinition,
-    topology: IBoardTopology,
-  ): void {
-    // The growing queue is also the visited collection. It contains only board cells.
-    const reached: RawCoord[] = [board.cells[0]];
-    for (const cell of reached) {
-      for (const neighbor of topology.neighbors(cell)) {
-        if (
-          board.cells.some((candidate) => candidate.equals(neighbor)) &&
-          !reached.some((visited) => visited.equals(neighbor))
-        ) {
-          reached.push(neighbor);
-        }
-      }
-    }
-    if (reached.length !== board.cells.length) {
-      throw new DomainError(ErrorCode.BoardNotConnected);
-    }
   }
 }

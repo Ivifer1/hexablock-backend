@@ -21,6 +21,10 @@ export class RawCoord {
     );
   }
 
+  isOrigin(): boolean {
+    return this.values.every((value) => value === 0);
+  }
+
   size(): Count {
     return Count.of(this.values.length);
   }

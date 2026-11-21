@@ -18,6 +18,8 @@ TBD
 | 2026-11-18 | Common level domain (#28, FR-010) | Start reusable level validation while preserving value objects | Typed level models and section contract, topology strategy and shared connectivity validation, content-equality registries, behavior tests and isolated rule-breaking probes | Ivifer1 manually approved the proposal before source edits; production square support deferred; existing unit/e2e, typecheck, lint and build passed |
 | 2026-11-18 | Coordinate validation follow-up (#28) | Reproduce and correct sparse coordinates and unsafe integers | Regression tests before the fix; dense defensive copy validated with safe integers; shared translation validation | User authorized both corrections; method signatures and geometry independence preserved; 184 unit/architecture and 25 e2e/integration tests pass, along with typecheck, lint and build; both isolated mutation probes detected |
 
+| 2026-11-19 | Per-variant level section validation (#29, FR-010) | Approve and start Fit and Sort validation | Codex drafted the proposal, implemented the topology-aware Fit and geometry-independent Sort strategies, and tested the approved rules | Ivifer1 confirmed duplicate color rejection and allowed zero to two star thresholds before manually approving the proposal |
+
 ## Critical Evaluation
 
 TBD — estimated percentage of AI-assisted work and errors detected.
