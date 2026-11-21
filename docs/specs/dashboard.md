@@ -7,5 +7,6 @@ Progress is measured by behaviour that is specified, implemented and verified, n
 | UC-001 Register | FR-001 | Draft | ✓ | ✓ | ✓ | — | Weak (spec not reviewed by the team yet) |
 | UC-002 Login | FR-002 | Draft | ✓ | ✓ | ✓ | — | Weak (spec not reviewed by the team yet) |
 | UC-003 Current user | FR-002 | Draft | ✓ | ✓ | ✓ | — | Weak (spec not reviewed by the team yet) |
+| UC-004 Read public level definitions | FR-008, FR-010 | Verified locally | ✓ | ✓ | ✓ | ✓ | CI/publication pending |
 
 Status flow: Draft → Reviewed → Approved → Implemented → Verified → Deployed.

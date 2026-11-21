@@ -24,6 +24,7 @@ export enum ErrorCode {
   InvalidCount = 'INVALID_COUNT',
   InvalidFitSection = 'INVALID_FIT_SECTION',
   InvalidSortSection = 'INVALID_SORT_SECTION',
+  LevelNotFound = 'LEVEL_NOT_FOUND',
   LevelIdTaken = 'LEVEL_ID_TAKEN',
   LevelOrderTaken = 'LEVEL_ORDER_TAKEN',
 }

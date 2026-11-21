@@ -1,3 +1,4 @@
+import { encodeSortSection } from '../../levels/level-section-payloads.js';
 import type { ILevelSection } from '../../../domain/level/level-section.js';
 import {
   ColorId,
@@ -18,20 +19,7 @@ export class HexaSortSectionMapper implements ILevelSectionMapper {
   readonly sectionKey = HexaSortSection.key;
 
   toPayload(section: ILevelSection): unknown {
-    if (!(section instanceof HexaSortSection)) {
-      throw new Error('Expected a Hexa Sort section');
-    }
-    return {
-      goal: { clearedStacks: section.clearedStacks.toNumber() },
-      colors: section.colors.map((color) => color.toString()),
-      stackHeight: {
-        min: section.minHeight.toNumber(),
-        max: section.maxHeight.toNumber(),
-      },
-      ...(section.seed.isPresent()
-        ? { seed: section.seed.get().toNumber() }
-        : {}),
-    };
+    return encodeSortSection(section);
   }
 
   toDomain(payload: unknown): HexaSortSection {
