@@ -23,6 +23,8 @@ import {
   Seed,
 } from '../../../src/domain/level/sort/hexa-sort-section.js';
 import { Count } from '../../../src/domain/shared/count.js';
+import { DomainError } from '../../../src/domain/shared/domain-error.js';
+import { ErrorCode } from '../../../src/domain/shared/error-code.js';
 import { Optional } from '../../../src/domain/shared/optional.js';
 import { createLevelRepository } from '../../../src/infrastructure/levels/create-level-repository.js';
 import { levelFrom } from '../../domain/level/level-fixture.js';
@@ -156,6 +158,81 @@ describe('MongoLevelRepository (integration, issue #30)', () => {
     expect(listed).toStrictEqual([first, second]);
   });
 
+  it('should_preserve_original_when_another_game_tries_to_create_the_same_id', async () => {
+    // Arrange
+    const original = fit('shared-level');
+    await repository.create(original);
+
+    // Act
+    const create = repository.create(sort('shared-level'));
+
+    // Assert
+    await expect(create).rejects.toThrow(
+      new DomainError(ErrorCode.LevelIdTaken),
+    );
+    expect((await repository.findById(original.id)).get()).toStrictEqual(
+      original,
+    );
+    expect(await model.countDocuments().exec()).toBe(1);
+  });
+
+  it('should_reject_a_unique_id_when_its_order_is_occupied_in_the_same_game', async () => {
+    // Arrange
+    const first = fit('first', 1);
+    const conflicting = fit('second', 1);
+    await repository.create(first);
+
+    // Act
+    const create = repository.create(conflicting);
+
+    // Assert
+    await expect(create).rejects.toThrow(
+      new DomainError(ErrorCode.LevelOrderTaken),
+    );
+    expect((await repository.findById(conflicting.id)).isPresent()).toBe(false);
+    expect((await repository.findById(first.id)).get()).toStrictEqual(first);
+  });
+
+  it('should_allow_same_order_when_games_differ', async () => {
+    // Arrange
+    const first = fit('fit-first', 1);
+    const second = sort();
+    await repository.create(first);
+
+    // Act
+    await repository.create(second);
+
+    // Assert
+    expect((await repository.findById(first.id)).get()).toStrictEqual(first);
+    expect((await repository.findById(second.id)).get()).toStrictEqual(second);
+  });
+
+  it('should_persist_one_winner_when_creates_compete_for_the_same_order', async () => {
+    // Arrange
+    const first = fit('candidate-a', 1);
+    const second = fit('candidate-b', 1);
+
+    // Act
+    const outcomes = await Promise.allSettled([
+      repository.create(first),
+      repository.create(second),
+    ]);
+
+    // Assert
+    expect(
+      outcomes.filter((outcome) => outcome.status === 'fulfilled'),
+    ).toHaveLength(1);
+    const failures = outcomes.filter(
+      (outcome) => outcome.status === 'rejected',
+    );
+    expect(failures).toHaveLength(1);
+    expect(failures[0].reason).toEqual(
+      new DomainError(ErrorCode.LevelOrderTaken),
+    );
+    const winner = outcomes[0].status === 'fulfilled' ? first : second;
+    expect(await repository.list(first.gameId)).toStrictEqual([winner]);
+  });
+
   it('should_replace_all_fields_when_a_known_level_loses_its_optional_seed', async () => {
     // Arrange
     const original = sort('replace-sort', 1, Optional.of(Seed.of(0)));
@@ -187,6 +264,58 @@ describe('MongoLevelRepository (integration, issue #30)', () => {
     expect((await repository.findById(level.id)).isPresent()).toBe(false);
   });
 
+  it('should_not_store_a_level_when_create_receives_an_invalid_piece_area', async () => {
+    // Arrange
+    const invalid = fitWithInvalidPieceArea('invalid-fit');
+
+    // Act
+    const create = repository.create(invalid);
+
+    // Assert
+    await expect(create).rejects.toThrow(
+      new DomainError(ErrorCode.InvalidFitSection),
+    );
+    expect(await model.countDocuments().exec()).toBe(0);
+  });
+
+  it('should_leave_the_document_unchanged_when_replace_receives_an_invalid_piece_area', async () => {
+    // Arrange
+    const original = fit();
+    await repository.create(original);
+    const id = original.id.toString();
+    const before = await model.findById(id).lean<LevelDocument>().exec();
+
+    // Act
+    const replace = repository.replace(fitWithInvalidPieceArea(id));
+
+    // Assert
+    await expect(replace).rejects.toThrow(
+      new DomainError(ErrorCode.InvalidFitSection),
+    );
+    expect(before).not.toBeNull();
+    expect(await model.findById(id).lean<LevelDocument>().exec()).toStrictEqual(
+      before,
+    );
+    expect(await model.countDocuments().exec()).toBe(1);
+  });
+
+  it('should_preserve_both_levels_when_replacement_uses_an_occupied_order', async () => {
+    // Arrange
+    const first = fit('first', 1);
+    const second = fit('second', 2);
+    await repository.create(first);
+    await repository.create(second);
+
+    // Act
+    const replace = repository.replace(fit('second', 1));
+
+    // Assert
+    await expect(replace).rejects.toThrow(
+      new DomainError(ErrorCode.LevelOrderTaken),
+    );
+    expect(await repository.list(first.gameId)).toStrictEqual([first, second]);
+  });
+
   it('should_report_removal_only_when_the_level_exists', async () => {
     // Arrange
     const level = fit();
@@ -200,5 +329,94 @@ describe('MongoLevelRepository (integration, issue #30)', () => {
     expect(removed).toBe(true);
     expect(removedAgain).toBe(false);
     expect((await repository.findById(level.id)).isPresent()).toBe(false);
+  });
+
+  it.each([
+    { key: 'sort', payload: {} },
+    { key: 'fit', payload: { pieces: [], stars: [] } },
+  ])(
+    'should_reject_rehydration_when_a_stored_section_is_invalid_%#',
+    async (section) => {
+      // Arrange
+      const level = fit();
+      await repository.create(level);
+      await model
+        .updateOne({ _id: level.id.toString() }, { $set: { section } })
+        .exec();
+
+      // Act
+      const read = repository.findById(level.id);
+
+      // Assert
+      await expect(read).rejects.toThrow('Invalid stored level');
+      expect(await model.countDocuments().exec()).toBe(1);
+    },
+  );
+
+  it('should_persist_one_winner_when_creates_compete_for_the_same_id', async () => {
+    // Arrange
+    const levels = Array.from({ length: 3 }, (_, index) =>
+      fit('same-id', index + 1),
+    );
+
+    // Act
+    const results = await Promise.allSettled(
+      levels.map((level) => repository.create(level)),
+    );
+
+    // Assert
+    const winnerIndex = results.findIndex(
+      (result) => result.status === 'fulfilled',
+    );
+    expect(winnerIndex).toBeGreaterThanOrEqual(0);
+    const failures = results.filter((result) => result.status === 'rejected');
+    expect(failures).toHaveLength(2);
+    for (const failure of failures) {
+      expect(failure.reason).toEqual(new DomainError(ErrorCode.LevelIdTaken));
+    }
+    const winner = levels[winnerIndex];
+    expect((await repository.findById(winner.id)).get()).toStrictEqual(winner);
+    expect(await model.countDocuments().exec()).toBe(1);
+  });
+
+  it('should_preserve_the_rejected_document_when_replacements_compete_for_one_order', async () => {
+    // Arrange
+    const originals = [fit('first', 1), fit('second', 2)];
+    for (const level of originals) await repository.create(level);
+    const before = await model
+      .find()
+      .sort({ _id: 1 })
+      .lean<LevelDocument[]>()
+      .exec();
+    const replacements = [fit('first', 3), fit('second', 3)];
+
+    // Act
+    const results = await Promise.allSettled(
+      replacements.map((level) => repository.replace(level)),
+    );
+
+    // Assert
+    const loserIndex = results.findIndex(
+      (result) => result.status === 'rejected',
+    );
+    const winnerIndex = results.findIndex(
+      (result) => result.status === 'fulfilled',
+    );
+    expect(loserIndex).toBeGreaterThanOrEqual(0);
+    expect(winnerIndex).toBeGreaterThanOrEqual(0);
+    expect(results[loserIndex]).toMatchObject({
+      status: 'rejected',
+      reason: new DomainError(ErrorCode.LevelOrderTaken),
+    });
+    expect(results[winnerIndex]).toEqual({ status: 'fulfilled', value: true });
+    const loser = await model
+      .findById(originals[loserIndex].id.toString())
+      .lean<LevelDocument>()
+      .exec();
+    expect(loser).toStrictEqual(before[loserIndex]);
+    expect(await repository.list(originals[0].gameId)).toStrictEqual([
+      originals[loserIndex],
+      replacements[winnerIndex],
+    ]);
   });
 });
