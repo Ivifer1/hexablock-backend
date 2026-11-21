@@ -1,4 +1,8 @@
 import type { Model } from 'mongoose';
+import {
+  encodeFitSection,
+  encodeSortSection,
+} from '../../adapters/levels/level-section-payloads.js';
 import { HexaFitSectionMapper } from '../../adapters/persistence/mongo/hexa-fit-section.mapper.js';
 import { HexaSortSectionMapper } from '../../adapters/persistence/mongo/hexa-sort-section.mapper.js';
 import { LevelMapper } from '../../adapters/persistence/mongo/level.mapper.js';
@@ -8,13 +12,30 @@ import type { ILevelRepository } from '../../application/ports/level-repository.
 import { GameId } from '../../domain/game/game-id.js';
 import { createLevelValidator } from './create-level-validator.js';
 
-// The caller provides a model whose indexes are initialized before accepting writes.
+export function createLevelSectionBindings() {
+  const fit = new HexaFitSectionMapper();
+  const sort = new HexaSortSectionMapper();
+  return [
+    {
+      gameId: GameId.of('hexa-fit'),
+      sectionKey: fit.sectionKey,
+      mapper: fit,
+      encode: encodeFitSection,
+    },
+    {
+      gameId: GameId.of('hexa-sort'),
+      sectionKey: sort.sectionKey,
+      mapper: sort,
+      encode: encodeSortSection,
+    },
+  ];
+}
+
+// The caller initializes indexes if it intends to accept writes.
 export function createLevelRepository(
   model: Model<LevelDocument>,
+  validator = createLevelValidator(),
 ): ILevelRepository {
-  const mapper = new LevelMapper(createLevelValidator(), [
-    { gameId: GameId.of('hexa-fit'), mapper: new HexaFitSectionMapper() },
-    { gameId: GameId.of('hexa-sort'), mapper: new HexaSortSectionMapper() },
-  ]);
+  const mapper = new LevelMapper(validator, createLevelSectionBindings());
   return new MongoLevelRepository(model, mapper);
 }

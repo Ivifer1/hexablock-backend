@@ -4,6 +4,7 @@ import {
   HexaFitSection,
   PieceId,
 } from '../../../domain/level/fit/hexa-fit-section.js';
+import { encodeFitSection } from '../../levels/level-section-payloads.js';
 import type { ILevelSection } from '../../../domain/level/level-section.js';
 import { RawCoord } from '../../../domain/level/raw-coord.js';
 import { Count } from '../../../domain/shared/count.js';
@@ -20,20 +21,7 @@ export class HexaFitSectionMapper implements ILevelSectionMapper {
   readonly sectionKey = HexaFitSection.key;
 
   toPayload(section: ILevelSection): unknown {
-    if (!(section instanceof HexaFitSection)) {
-      throw new Error('Expected a Hexa Fit section');
-    }
-    return {
-      pieces: section.pieces.map((piece) => ({
-        id: piece.id.toString(),
-        cells: piece.cells.map((cell) => cell.toArray()),
-      })),
-      stars: section.stars.map((threshold) => ({
-        stars: threshold.stars.toNumber(),
-        maxMoves: threshold.maxMoves.toNumber(),
-        maxSeconds: threshold.maxSeconds.toNumber(),
-      })),
-    };
+    return encodeFitSection(section);
   }
 
   toDomain(payload: unknown): HexaFitSection {

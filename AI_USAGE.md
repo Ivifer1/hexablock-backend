@@ -22,6 +22,8 @@ TBD
 
 | 2026-11-20 | Level repository (#30, FR-010) | Approve persistence design without coupling domain to MongoDB | Implemented the repository port, Mongo adapter, typed section mappers, unique indexes and integration tests | Human approved boundary-only conversions and separate create/replace semantics; endpoints remain out of scope |
 
+| 2026-11-21 | Public level reads (#31, UC-004) | Approve and implement the documented public level reads | Drafted the use case and proposal, added read-only HTTP wiring and shared section encoding, and verified behavior with E2E, compatibility and isolated mutation probes | Ivifer1 confirmed the response rules and manually approved the use case and design before source edits |
+
 ## Critical Evaluation
 
 TBD — estimated percentage of AI-assisted work and errors detected.
