@@ -16,6 +16,11 @@ interface HttpError {
 
 // One entry per error code that reaches HTTP. A new code is a new entry.
 const DOMAIN_ERRORS: Partial<Record<ErrorCode, HttpError>> = {
+  [ErrorCode.LevelNotFound]: {
+    statusCode: 404,
+    error: 'Not Found',
+    message: 'Level not found',
+  },
   [ErrorCode.UsernameTaken]: {
     statusCode: 409,
     error: 'Conflict',
