@@ -14,7 +14,7 @@ import { dirname, join, resolve } from 'node:path';
 // file inside a temporary copy of the project layout, using the real .oxlintrc.json.
 
 const projectRoot = resolve(import.meta.dirname, '../..');
-const oxlint = join(projectRoot, 'node_modules/.bin/oxlint');
+const oxlintBin = resolve(projectRoot, 'node_modules/oxlint/bin/oxlint');
 
 let workspace: string;
 
@@ -40,10 +40,14 @@ function restrictedImportErrors(layerFile: string, importPath: string): number {
 
   let output: string;
   try {
-    output = execFileSync(oxlint, ['--format', 'json', layerFile], {
-      cwd: workspace,
-      encoding: 'utf8',
-    });
+    output = execFileSync(
+      process.execPath,
+      [oxlintBin, '--format', 'json', layerFile],
+      {
+        cwd: workspace,
+        encoding: 'utf8',
+      },
+    );
   } catch (error) {
     // oxlint exits with a non-zero code when it reports errors.
     output = (error as { stdout: string }).stdout;
