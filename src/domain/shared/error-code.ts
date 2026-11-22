@@ -7,6 +7,7 @@ export enum ErrorCode {
   InvalidPassword = 'INVALID_PASSWORD',
   UsernameTaken = 'USERNAME_TAKEN',
   InvalidCredentials = 'INVALID_CREDENTIALS',
+  AdministratorRoleRequired = 'ADMINISTRATOR_ROLE_REQUIRED',
   AuthenticationRequired = 'AUTHENTICATION_REQUIRED',
   InvalidGameId = 'INVALID_GAME_ID',
   InvalidSchemaVersion = 'INVALID_SCHEMA_VERSION',
