@@ -1,5 +1,7 @@
 import type { Model } from 'mongoose';
 import {
+  decodeFitSection,
+  decodeSortSection,
   encodeFitSection,
   encodeSortSection,
 } from '../../adapters/levels/level-section-payloads.js';
@@ -10,6 +12,7 @@ import type { LevelDocument } from '../../adapters/persistence/mongo/level.schem
 import { MongoLevelRepository } from '../../adapters/persistence/mongo/mongo-level.repository.js';
 import type { ILevelRepository } from '../../application/ports/level-repository.js';
 import { GameId } from '../../domain/game/game-id.js';
+import { ErrorCode } from '../../domain/shared/error-code.js';
 import { createLevelValidator } from './create-level-validator.js';
 
 export function createLevelSectionBindings() {
@@ -21,12 +24,16 @@ export function createLevelSectionBindings() {
       sectionKey: fit.sectionKey,
       mapper: fit,
       encode: encodeFitSection,
+      decode: decodeFitSection,
+      validationErrors: [ErrorCode.InvalidFitSection],
     },
     {
       gameId: GameId.of('hexa-sort'),
       sectionKey: sort.sectionKey,
       mapper: sort,
       encode: encodeSortSection,
+      decode: decodeSortSection,
+      validationErrors: [ErrorCode.InvalidSortSection],
     },
   ];
 }
