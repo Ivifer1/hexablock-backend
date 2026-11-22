@@ -24,6 +24,8 @@ TBD
 
 | 2026-11-21 | Public level reads (#31, UC-004) | Approve and implement the documented public level reads | Drafted the use case and proposal, added read-only HTTP wiring and shared section encoding, and verified behavior with E2E, compatibility and isolated mutation probes | Ivifer1 confirmed the response rules and manually approved the use case and design before source edits |
 
+| 2026-11-21 | Admin level writes (#32, UC-005) | Implement the approved admin routes and return 409 when order is occupied | Drafted the design and implemented role reload, request decoding, write readiness and tests; verified regression and mutation checks | Ivifer1 confirmed occupied-order semantics and manually approved both documents before source edits |
+
 ## Critical Evaluation
 
 TBD — estimated percentage of AI-assisted work and errors detected.
