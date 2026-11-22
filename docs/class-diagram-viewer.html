@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HexaBlock Backend — Visor Interactivo de Diagrama de Clases</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body, html { width: 100%; height: 100%; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #f8fafc; }
+    #toolbar {
+      position: fixed; top: 16px; left: 16px; z-index: 100;
+      background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px;
+      padding: 8px 12px; display: flex; gap: 8px; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    #toolbar button {
+      background: #334155; border: none; color: #fff; padding: 6px 12px; border-radius: 6px;
+      cursor: pointer; font-size: 13px; font-weight: 500; transition: background 0.15s ease;
+    }
+    #toolbar button:hover { background: #475569; }
+    #title { font-weight: 600; font-size: 13px; color: #94a3b8; margin-right: 8px; border-right: 1px solid #334155; padding-right: 12px; }
+    #viewport { width: 100%; height: 100%; cursor: grab; display: flex; justify-content: center; align-items: center; }
+    #viewport.grabbing { cursor: grabbing; }
+    #content { transform-origin: 0 0; will-change: transform; }
+    img, svg { max-width: none; user-select: none; pointer-events: none; }
+    .hint { font-size: 12px; color: #64748b; margin-left: 8px; }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <span id="title">HexaBlock Backend Class Diagram</span>
+    <button onclick="zoomIn()">Zoom +</button>
+    <button onclick="zoomOut()">Zoom -</button>
+    <button onclick="resetZoom()">Restablecer</button>
+    <span class="hint">Rueda del ratón = zoom · Arrastre = mover</span>
+  </div>
+  <div id="viewport">
+    <div id="content">
+      <img id="diagram" src="class-diagram.svg" alt="HexaBlock Backend Class Diagram" onerror="showFallback()">
+      <div id="fallback" style="display:none; padding: 40px; text-align: center;">
+        <h2>Diagrama de Clases (class-diagram.svg)</h2>
+        <p style="margin-top: 10px; color: #94a3b8;">Coloca el archivo exportado <code>docs/class-diagram.svg</code> para visualizarlo con zoom y paneo continuo.</p>
+      </div>
+    </div>
+  </div>
+  <script>
+    let scale = 1, panX = 0, panY = 0, isDragging = false, startX = 0, startY = 0;
+    const content = document.getElementById('content');
+    const viewport = document.getElementById('viewport');
+
+    function updateTransform() {
+      content.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+    }
+    function zoomIn() { scale = Math.min(scale * 1.25, 10); updateTransform(); }
+    function zoomOut() { scale = Math.max(scale / 1.25, 0.1); updateTransform(); }
+    function resetZoom() { scale = 1; panX = 0; panY = 0; updateTransform(); }
+    function showFallback() {
+      document.getElementById('diagram').style.display = 'none';
+      document.getElementById('fallback').style.display = 'block';
+    }
+
+    viewport.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.15 : 0.85;
+      const mouseX = e.clientX, mouseY = e.clientY;
+      panX = mouseX - (mouseX - panX) * zoomFactor;
+      panY = mouseY - (mouseY - panY) * zoomFactor;
+      scale = Math.min(Math.max(scale * zoomFactor, 0.1), 10);
+      updateTransform();
+    }, { passive: false });
+
+    viewport.addEventListener('mousedown', (e) => {
+      isDragging = true; startX = e.clientX - panX; startY = e.clientY - panY;
+      viewport.classList.add('grabbing');
+    });
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      panX = e.clientX - startX; panY = e.clientY - startY;
+      updateTransform();
+    });
+    window.addEventListener('mouseup', () => {
+      isDragging = false; viewport.classList.remove('grabbing');
+    });
+  </script>
+</body>
+</html>
