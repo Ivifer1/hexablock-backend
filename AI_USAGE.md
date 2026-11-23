@@ -25,6 +25,8 @@ TBD
 | 2026-11-21 | Public level reads (#31, UC-004) | Approve and implement the documented public level reads | Drafted the use case and proposal, added read-only HTTP wiring and shared section encoding, and verified behavior with E2E, compatibility and isolated mutation probes | Ivifer1 confirmed the response rules and manually approved the use case and design before source edits |
 | 2026-11-22 | Harness benchmark and 3-Gate quality protocol | "Integrate reference repo best practices (Arrow Maze, Nodus) into backend harness" | Added 3-gate checklists (`pre_implementation`, `post_implementation`, `pre_commit`), testing architecture with In-Memory Fakes (`Map`), pan/zoom class diagram viewer, and Layer 4 repository placement rules | Team mandated zero network/DB in unit tests and strict human approval gate before editing `src/**`. |
 
+| 2026-11-23 | Swagger documentation (#21, UC-007) | Continue with Swagger and leave #32 and #33 unchanged | Codex (active model not shown) drafted the specification, wrote opt-in Swagger configuration and HTTP metadata, and tested the compiled API; GPT-6.1 Sol independently probed the candidate | Ivifer1 approved the specification and design. A false test assumption about the disabled route response body was removed to match existing HTTP behavior. Dependency inspection found installation analytics; project-level opt-out was applied and verified offline. |
+
 ## Critical Evaluation
 
 - Approximately 85% of boilerplate, validation, and test scaffolding was generated with AI assistance under strict human architectural supervision.
