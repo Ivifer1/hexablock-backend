@@ -69,8 +69,15 @@ curl localhost:3000/api/v1/auth/me -H "Authorization: Bearer <accessToken>"
 | `JWT_SECRET` | yes | Secret that signs the access tokens, at least 32 bytes; the app does not start without it |
 | `JWT_EXPIRES_IN` | no | Token lifetime in seconds (default `604800`, 7 days; at most `2592000`, 30 days) |
 | `PORT` | no | HTTP port (default `3000`) |
+| `SWAGGER_ENABLED` | no | Set to `true` to serve API documentation (disabled by default) |
 
-Every route lives under `/api/v1` except `GET /health`. The full contract is in `docs/specs/api-contract.md`.
+Business routes live under `/api/v1`; the health check is `GET /health`. See the [full API contract](docs/specs/api-contract.md).
+
+### API documentation
+
+Run `SWAGGER_ENABLED=true npm run start:dev`, then open [Swagger UI](http://localhost:3000/docs) or fetch the [OpenAPI JSON](http://localhost:3000/docs-json). If you changed `PORT`, use that port instead.
+
+The reference is generated from the active controllers and lists only the routes implemented in this backend. To try the authenticated route, use **Authorize** with a development JWT. The UI does not persist it across browser sessions. Enable documentation only on an instance intended to expose it: anyone with network access to that instance can read the reference.
 
 ## Tests
 
