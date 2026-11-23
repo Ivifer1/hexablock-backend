@@ -3,6 +3,8 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
 import { vi } from 'vitest';
+import fitExample from '../docs/specs/levels/hexa-fit.example.json' with { type: 'json' };
+import sortExample from '../docs/specs/levels/hexa-sort.example.json' with { type: 'json' };
 import { AppModule } from '../src/infrastructure/app.module.js';
 import { configureApp } from '../src/infrastructure/http/configure-app.js';
 
@@ -35,6 +37,8 @@ interface ContractDocument {
 const operations = [
   ['get', '/health', ['200']],
   ['get', '/api/v1/auth/me', ['200', '401', '500']],
+  ['get', '/api/v1/levels', ['200', '400', '404', '500']],
+  ['get', '/api/v1/levels/{id}', ['200', '404', '500']],
   ['post', '/api/v1/auth/login', ['200', '400', '401', '413', '500']],
   ['post', '/api/v1/auth/register', ['201', '400', '409', '413', '500']],
 ] as const;
@@ -131,7 +135,25 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
     expect(css.status).toBe(404);
   });
 
-  it('should_describe_the_auth_contract_when_client_requests_openapi_json', async () => {
+  it('should_list_only_the_implemented_operations_when_client_requests_openapi_json', async () => {
+    // Arrange
+    const http = await start('true');
+
+    // Act
+    const response = await http.get('/docs-json');
+
+    // Assert
+    expect(response.status).toBe(200);
+    const { paths } = response.body as ContractDocument;
+    const listed = Object.entries(paths).flatMap(([path, item]) =>
+      Object.keys(item).map((method) => `${method} ${path}`),
+    );
+    expect(listed.sort()).toEqual(
+      operations.map(([method, path]) => `${method} ${path}`).sort(),
+    );
+  });
+
+  it('should_describe_the_actual_http_contract_when_client_requests_openapi_json', async () => {
     // Arrange
     const http = await start('true');
 
@@ -179,6 +201,40 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
     expect(user.required).toEqual(['id', 'username', 'role']);
     expect(readSchema(document, authResult.properties.user)).toEqual(user);
 
+    const list = document.paths['/api/v1/levels'].get;
+    const get = document.paths['/api/v1/levels/{id}'].get;
+    expect(list.parameters).toContainEqual(
+      expect.objectContaining({ name: 'gameId', in: 'query', required: true }),
+    );
+    expect(get.parameters).toContainEqual(
+      expect.objectContaining({ name: 'id', in: 'path', required: true }),
+    );
+    const listResult = jsonSchema(document, list.responses['200']);
+    expect(listResult.required).toEqual(['items']);
+    const level = jsonSchema(document, get.responses['200']);
+    expect(readSchema(document, listResult.properties.items.items)).toEqual(
+      level,
+    );
+    expect(level).toMatchObject({
+      required: ['schemaVersion', 'id', 'gameId', 'order', 'name', 'board'],
+      additionalProperties: { type: 'object' },
+      properties: {
+        name: { required: ['es', 'en'] },
+        board: {
+          properties: {
+            cells: {
+              type: 'array',
+              items: { type: 'array', items: { type: 'integer' } },
+            },
+          },
+        },
+      },
+    });
+    expect(get.responses['200'].content['application/json']).toMatchObject({
+      examples: { fit: { value: fitExample }, sort: { value: sortExample } },
+    });
+    expect(level.properties).not.toHaveProperty('fit');
+    expect(level.properties).not.toHaveProperty('sort');
     const badRequest = jsonSchema(document, register.responses['400']);
     expect(badRequest.required).toEqual([
       'statusCode',
