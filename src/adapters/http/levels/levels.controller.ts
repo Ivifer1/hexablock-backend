@@ -1,4 +1,13 @@
 import { Controller, Get, Inject, Param, Query } from '@nestjs/common';
+import {
+  ApiOkResponse,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
+import { ApiHttpError, schemaRef } from '../openapi.schemas.js';
+import { levelExamples } from './level.openapi-examples.js';
 import { GetLevelUseCase } from '../../../application/use-cases/get-level.use-case.js';
 import { ListLevelsUseCase } from '../../../application/use-cases/list-levels.use-case.js';
 import { GameId } from '../../../domain/game/game-id.js';
@@ -11,6 +20,8 @@ import {
   LevelResponseMapper,
 } from './level-response.mapper.js';
 
+@ApiTags('Levels')
+@ApiHttpError(500, 'Unexpected server error.')
 @Controller('levels')
 export class LevelsController {
   constructor(
@@ -20,6 +31,19 @@ export class LevelsController {
   ) {}
 
   @Get()
+  @ApiOperation({ summary: 'List public levels for a game' })
+  @ApiQuery({
+    name: 'gameId',
+    required: true,
+    schema: { type: 'string', pattern: '^[a-z0-9-]+$' },
+    example: 'hexa-fit',
+  })
+  @ApiOkResponse({
+    description: 'Levels for the game.',
+    schema: schemaRef('LevelList'),
+  })
+  @ApiHttpError(400, 'Missing or malformed gameId.')
+  @ApiHttpError(404, 'Unknown game or game does not support levels.')
   async list(
     @Query('gameId') rawGameId: unknown,
   ): Promise<{ items: LevelResponse[] }> {
@@ -28,6 +52,18 @@ export class LevelsController {
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Get a public level by ID' })
+  @ApiParam({ name: 'id', required: true, type: String, example: 'fit-003' })
+  @ApiOkResponse({
+    description: 'Level definition.',
+    content: {
+      'application/json': {
+        schema: schemaRef('Level'),
+        examples: levelExamples,
+      },
+    },
+  })
+  @ApiHttpError(404, 'Invalid or unknown level ID.')
   async get(@Param('id') rawId: string): Promise<LevelResponse> {
     const level = await this.getLevel.execute(parseLevelId(rawId));
     return this.mapper.toResponse(level);

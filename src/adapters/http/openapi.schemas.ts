@@ -1,7 +1,14 @@
 import { ApiResponse, type SchemaObject } from '@nestjs/swagger';
 
 type Model =
-  'Health' | 'Credentials' | 'AuthResult' | 'User' | 'Error' | 'BadRequest';
+  | 'Health'
+  | 'Credentials'
+  | 'AuthResult'
+  | 'User'
+  | 'Error'
+  | 'BadRequest'
+  | 'Level'
+  | 'LevelList';
 
 export const jwtSchemeName = 'bearer';
 
@@ -95,6 +102,47 @@ export const apiSchemas: Record<Model, SchemaObject> = {
             message: { type: 'string' },
           },
         },
+      },
+    },
+  },
+  Level: {
+    type: 'object',
+    description:
+      'Common level fields plus one object named by the registered game section.',
+    required: ['schemaVersion', 'id', 'gameId', 'order', 'name', 'board'],
+    additionalProperties: { type: 'object' },
+    properties: {
+      schemaVersion: { type: 'integer' },
+      id: { type: 'string' },
+      gameId: { type: 'string' },
+      order: { type: 'integer' },
+      name: {
+        type: 'object',
+        required: ['es', 'en'],
+        properties: { es: { type: 'string' }, en: { type: 'string' } },
+      },
+      board: {
+        type: 'object',
+        required: ['topology', 'cells'],
+        properties: {
+          topology: { type: 'string' },
+          cells: {
+            type: 'array',
+            items: { type: 'array', items: { type: 'integer' } },
+          },
+        },
+      },
+    },
+  },
+  LevelList: {
+    type: 'object',
+    required: ['items'],
+    properties: {
+      items: {
+        type: 'array',
+        description:
+          'Levels ordered by ascending order; empty when the game has no levels.',
+        items: schemaRef('Level'),
       },
     },
   },
