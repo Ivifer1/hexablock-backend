@@ -42,10 +42,9 @@
 ## Business rules
 
 - BR-007-1: Both documentation routes are available only when the operator explicitly enables documentation for that instance.
-- BR-007-2: The reference lists only implemented operations: health, registration, login, the current user and the two public level reads on the #21 baseline.
+- BR-007-2: The reference lists only implemented operations. With #21 and #32 together, this includes health, registration, login, the current user, public level reads, and administrator level writes.
 - BR-007-3: The documentation preserves the paths, inputs, success and error contracts, and authentication policy that the API actually implements. A description or example does not change validation.
 
 ## Open questions
 
 - Approval decision: the draft proposes `/docs` and `/docs-json`, disabled by default and enabled explicitly for local use or a demo. Always-on documentation would remove setup for reviewers but expose the documentation on every reachable instance.
-- Approval decision: #32 and future operations enter the reference when they are implemented in the same codebase, not as placeholders in #21.

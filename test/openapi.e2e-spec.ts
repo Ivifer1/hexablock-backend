@@ -19,14 +19,19 @@ interface JsonContent {
   readonly content: { 'application/json': { schema: ContractSchema } };
 }
 
+interface ContractResponse extends Partial<JsonContent> {
+  readonly description: string;
+}
+
 interface Operation {
   readonly requestBody?: JsonContent & { required: boolean };
   readonly parameters?: unknown;
-  readonly responses: Record<string, JsonContent>;
+  readonly responses: Record<string, ContractResponse>;
   readonly security?: ReadonlyArray<Record<string, readonly string[]>>;
 }
 
 interface ContractDocument {
+  readonly security?: Operation['security'];
   readonly paths: Record<string, Record<string, Operation>>;
   readonly components: {
     readonly schemas: Record<string, ContractSchema>;
@@ -43,6 +48,16 @@ const operations = [
   ['post', '/api/v1/auth/register', ['201', '400', '409', '413', '500']],
 ] as const;
 
+const adminLevelOperations = [
+  ['post', '/api/v1/levels', ['201', '400', '401', '403', '409', '413', '500']],
+  [
+    'put',
+    '/api/v1/levels/{id}',
+    ['200', '400', '401', '403', '404', '409', '413', '500'],
+  ],
+  ['delete', '/api/v1/levels/{id}', ['204', '401', '403', '404', '500']],
+] as const;
+
 function readSchema(
   document: ContractDocument,
   schema: ContractSchema,
@@ -56,9 +71,11 @@ function readSchema(
 
 function jsonSchema(
   document: ContractDocument,
-  body: JsonContent,
+  body: Partial<JsonContent>,
 ): ContractSchema {
-  return readSchema(document, body.content['application/json'].schema);
+  const schema = body.content?.['application/json'].schema;
+  if (!schema) throw new Error('Expected an application/json schema');
+  return readSchema(document, schema);
 }
 
 describe('Read the running API documentation (e2e, UC-007)', () => {
@@ -149,7 +166,9 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
       Object.keys(item).map((method) => `${method} ${path}`),
     );
     expect(listed.sort()).toEqual(
-      operations.map(([method, path]) => `${method} ${path}`).sort(),
+      [...operations, ...adminLevelOperations]
+        .map(([method, path]) => `${method} ${path}`)
+        .sort(),
     );
   });
 
@@ -163,6 +182,7 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
     // Assert
     expect(response.status).toBe(200);
     const document = response.body as ContractDocument;
+    expect(document.security ?? []).toEqual([]);
     for (const [method, path, codes] of operations) {
       const operation = document.paths[path][method];
       expect(Object.keys(operation.responses)).toEqual(codes);
@@ -230,7 +250,7 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
         },
       },
     });
-    expect(get.responses['200'].content['application/json']).toMatchObject({
+    expect(get.responses['200'].content?.['application/json']).toMatchObject({
       examples: { fit: { value: fitExample }, sort: { value: sortExample } },
     });
     expect(level.properties).not.toHaveProperty('fit');
@@ -252,6 +272,71 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
       jsonSchema(document, register.responses['409']).properties,
     ).not.toHaveProperty('details');
   });
+
+  it.each(adminLevelOperations)(
+    'should_document_the_admin_level_contract_when_client_inspects_%s_%s',
+    async (method, path, [success, ...errors]) => {
+      // Arrange
+      const http = await start('true');
+      const levelMedia = {
+        schema: { $ref: '#/components/schemas/Level' },
+        examples: { fit: { value: fitExample }, sort: { value: sortExample } },
+      };
+
+      // Act
+      const response = await http.get('/docs-json');
+
+      // Assert
+      expect(response.status).toBe(200);
+      const document = response.body as ContractDocument;
+      const operation = document.paths[path][method];
+      expect.soft(operation.security).toEqual([{ bearer: [] }]);
+      expect
+        .soft(Object.keys(operation.responses))
+        .toEqual([success, ...errors]);
+      expect.soft(operation.responses['403']).toMatchObject({
+        description: expect.stringMatching(/stored.*admin/i),
+      });
+      for (const code of errors) {
+        expect.soft(operation.responses[code]).toMatchObject({
+          content: {
+            'application/json': {
+              schema: {
+                $ref:
+                  code === '400'
+                    ? '#/components/schemas/BadRequest'
+                    : '#/components/schemas/Error',
+              },
+            },
+          },
+        });
+      }
+
+      if (method !== 'post') {
+        expect.soft(operation.parameters).toContainEqual(
+          expect.objectContaining({
+            name: 'id',
+            in: 'path',
+            required: true,
+            schema: { type: 'string', example: 'fit-003' },
+          }),
+        );
+      }
+
+      if (method === 'delete') {
+        expect.soft(operation.requestBody).toBeUndefined();
+        expect.soft(operation.responses[success]).not.toHaveProperty('content');
+      } else {
+        expect.soft(operation.requestBody).toMatchObject({
+          required: true,
+          content: { 'application/json': levelMedia },
+        });
+        expect.soft(operation.responses[success]).toMatchObject({
+          content: { 'application/json': levelMedia },
+        });
+      }
+    },
+  );
 
   it('should_preserve_existing_http_behavior_when_documentation_is_enabled', async () => {
     // Arrange
