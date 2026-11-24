@@ -5,7 +5,7 @@ documentation generated from the code must match this contract; when one changes
 
 ## Conventions
 
-- Base path: `/api/v1`. `GET /health` stays outside it.
+- Base path: `/api/v1`. `GET /health` stays outside it. When enabled, `/docs` and `/docs-json` are also outside the API prefix and show only the implemented routes.
 - JSON in and out. Field names in `camelCase`.
 - Authentication: `Authorization: Bearer <accessToken>` on the routes marked 🔒. 🔑 means admin only.
 - Every variant is addressed by its `gameId` (`hexa-lines`, `hexa-fit`, `hexa-sort`, `hexa-merge`). No route names a
