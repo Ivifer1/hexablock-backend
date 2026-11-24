@@ -200,4 +200,203 @@ describe('Administrative level writes (e2e, UC-005)', () => {
     expect(removed.text).toBe('');
     expect(await snapshot()).toStrictEqual([]);
   });
+
+  it.each([
+    ['invalid board', { ...fit, board: { ...fit.board, cells: [] } }],
+    [
+      'invalid Fit rules',
+      { ...fit, fit: { ...fit.fit, pieces: fit.fit.pieces.slice(0, 1) } },
+    ],
+    [
+      'invalid Sort rules',
+      { ...sort, sort: { ...sort.sort, colors: ['tone-1', 'tone-1'] } },
+    ],
+    ['unsupported game', { ...fit, gameId: 'hexa-lines' }],
+    ['extra section', { ...fit, sort: sort.sort }],
+    [
+      'malformed variant section',
+      { ...fit, fit: { ...fit.fit, pieces: 'bad' } },
+    ],
+  ])(
+    'should_return_400_when_submitted_format_is_invalid_%s',
+    async (_, definition) => {
+      // Arrange
+      const before = await snapshot();
+
+      // Act
+      const response = await create(definition);
+
+      // Assert
+      expect(response.status).toBe(400);
+      expect(response.body).toStrictEqual({
+        ...errorBody(400, 'Bad Request', 'Invalid request', path),
+        details: [
+          expect.objectContaining({
+            field: expect.any(String),
+            message: expect.any(String),
+          }),
+        ],
+      });
+      expect(await snapshot()).toStrictEqual(before);
+    },
+  );
+
+  it.each(['not-the-body-id', 'BAD-ID'])(
+    'should_return_400_when_put_path_id_is_invalid_or_mismatched_%s',
+    async (id) => {
+      // Arrange
+      const before = await snapshot();
+
+      // Act
+      const response = await replace(id, fit);
+
+      // Assert
+      expect(response.status).toBe(400);
+      expect(response.body).toMatchObject(
+        errorBody(400, 'Bad Request', 'Invalid request', `${path}/${id}`),
+      );
+      expect(await snapshot()).toStrictEqual(before);
+    },
+  );
+
+  it('should_return_404_without_writing_when_write_target_is_missing', async () => {
+    // Arrange
+    const before = await snapshot();
+
+    // Act
+    const put = await replace(fit.id, fit);
+    const undo = await remove(fit.id);
+    const invalid = await remove('BAD-ID');
+
+    // Assert
+    expect(put.status).toBe(404);
+    expect(undo.status).toBe(404);
+    expect(invalid.status).toBe(404);
+    expect(put.body).toStrictEqual(
+      errorBody(404, 'Not Found', 'Level not found', `${path}/${fit.id}`),
+    );
+    expect(undo.body).toStrictEqual(
+      errorBody(404, 'Not Found', 'Level not found', `${path}/${fit.id}`),
+    );
+    expect(invalid.body).toStrictEqual(
+      errorBody(404, 'Not Found', 'Level not found', `${path}/BAD-ID`),
+    );
+    expect(await snapshot()).toStrictEqual(before);
+  });
+
+  it('should_return_distinct_409s_when_id_or_game_order_conflicts', async () => {
+    // Arrange
+    const first = { ...fit, order: 1 };
+    const second = { ...fit, id: 'fit-second', order: 2 };
+    expect((await create(first)).status).toBe(201);
+    expect((await create(second)).status).toBe(201);
+    const before = await snapshot();
+
+    // Act
+    const duplicateId = await create({ ...first, order: 4 });
+    const duplicateOrder = await create({ ...fit, id: 'fit-third', order: 1 });
+    const replaceOrder = await replace(second.id, { ...second, order: 1 });
+
+    // Assert
+    for (const response of [duplicateId, duplicateOrder, replaceOrder]) {
+      expect(response.status).toBe(409);
+    }
+    expect(duplicateId.body).toStrictEqual(
+      errorBody(409, 'Conflict', 'Level ID already exists', path),
+    );
+    expect(duplicateOrder.body).toStrictEqual(
+      errorBody(
+        409,
+        'Conflict',
+        'Level order already exists in this game',
+        path,
+      ),
+    );
+    expect(replaceOrder.body).toStrictEqual(
+      errorBody(
+        409,
+        'Conflict',
+        'Level order already exists in this game',
+        `${path}/${second.id}`,
+      ),
+    );
+    expect(await snapshot()).toStrictEqual(before);
+  });
+
+  it('should_allow_same_order_when_definitions_belong_to_different_games', async () => {
+    // Arrange
+    const first = { ...fit, order: sort.order };
+
+    // Act
+    const fitResult = await create(first);
+    const sortResult = await create(sort);
+
+    // Assert
+    expect(fitResult.status).toBe(201);
+    expect(sortResult.status).toBe(201);
+    expect(await snapshot()).toHaveLength(2);
+  });
+
+  it.each([
+    'missing',
+    'nonunique',
+    'partial',
+    'sparse',
+    'collated',
+    'wrong-order',
+  ] as const)(
+    'should_fail_closed_when_index_is_%s_without_disabling_public_reads',
+    async (kind) => {
+      // Arrange
+      expect((await create(fit)).status).toBe(201);
+      const before = await snapshot();
+      await levels().dropIndex(index);
+      if (kind !== 'missing') {
+        const key =
+          kind === 'wrong-order' ? ({ order: 1, gameId: 1 } as const) : keys;
+        await levels().createIndex(key, {
+          name: 'unfit-level-index',
+          unique: kind !== 'nonunique',
+          ...(kind === 'partial'
+            ? { partialFilterExpression: { order: { $gt: 1 } } }
+            : {}),
+          ...(kind === 'sparse' ? { sparse: true } : {}),
+          ...(kind === 'collated'
+            ? { collation: { locale: 'en', strength: 2 } }
+            : {}),
+        });
+      }
+
+      try {
+        // Act
+        const malformed = await create({
+          ...fit,
+          board: { ...fit.board, cells: [] },
+        });
+        const post = await create(sort);
+        const put = await replace(fit.id, fit);
+        const deletion = await remove(fit.id);
+        const read = await http().get(`${path}/${fit.id}`);
+
+        // Assert
+        expect(malformed.status).toBe(400);
+        expect(malformed.body).toMatchObject(
+          errorBody(400, 'Bad Request', 'Invalid request', path),
+        );
+        for (const response of [post, put, deletion]) {
+          expect(response.status).toBe(500);
+          expect(response.body).toMatchObject({
+            statusCode: 500,
+            message: 'Internal server error',
+          });
+        }
+        expect(read.status).toBe(200);
+        expect(read.body).toStrictEqual(fit);
+        expect(await snapshot()).toStrictEqual(before);
+      } finally {
+        if (kind !== 'missing') await levels().dropIndex('unfit-level-index');
+        await levels().createIndex(keys, { unique: true, name: index });
+      }
+    },
+  );
 });

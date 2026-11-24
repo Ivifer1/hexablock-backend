@@ -42,7 +42,7 @@ Validation errors (`400`) add `details`, one entry per invalid field:
 | `401` | Missing, invalid or expired token; wrong credentials |
 | `403` | Valid token without the required role |
 | `404` | Resource or `gameId` not found |
-| `409` | Username or level id already exists |
+| `409` | Username or level ID already exists, or the level order is occupied within its game |
 
 ## Endpoints
 
@@ -176,7 +176,10 @@ Errors: `400`, `404`.
 ### Levels
 
 Levels follow the [level format](level-format.md). Reading is public, so the app can load levels before login;
-writing is admin only, so players cannot break the levels of everyone.
+writing is admin only. The write routes check the current stored role; a deleted account receives `401`,
+and a current non-admin receives `403`, regardless of the token's role claim. Before a valid write,
+the API checks for the required unique `{ gameId: 1, order: 1 }` index. If readiness cannot be verified it
+returns a generic `500` without writing. Public reads do not check or provision this index.
 
 #### `GET /levels?gameId=`
 
@@ -190,12 +193,12 @@ does not support levels yields `404`.
 
 #### `POST /levels` 🔑
 
-Body: a level. `201`: the stored level. Errors: `400` (breaks the format rules), `401`, `403`, `409` (id exists).
+Body: a level. `201`: the stored level. Errors: `400` (invalid format), `401`, `403`, `409` (duplicate ID or occupied order), `500` (write readiness unavailable).
 
 #### `PUT /levels/{id}` 🔑
 
-Body: the full level; its `id` must equal the path `id`. `200`: the stored level. Errors: `400`, `401`, `403`, `404`.
+Body: the full level; its `id` must equal the path `id`. `200`: the stored level. Errors: `400`, `401`, `403`, `404`, `409` (occupied order), `500` (write readiness unavailable).
 
 #### `DELETE /levels/{id}` 🔑
 
-`204` with no body. Errors: `401`, `403`, `404`.
+`204` with no body. Errors: `401`, `403`, `404` (unknown or malformed ID), `500` (write readiness unavailable).
