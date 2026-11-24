@@ -16,6 +16,21 @@ interface HttpError {
 
 // One entry per error code that reaches HTTP. A new code is a new entry.
 const DOMAIN_ERRORS: Partial<Record<ErrorCode, HttpError>> = {
+  [ErrorCode.AdministratorRoleRequired]: {
+    statusCode: 403,
+    error: 'Forbidden',
+    message: 'Administrator role required',
+  },
+  [ErrorCode.LevelIdTaken]: {
+    statusCode: 409,
+    error: 'Conflict',
+    message: 'Level ID already exists',
+  },
+  [ErrorCode.LevelOrderTaken]: {
+    statusCode: 409,
+    error: 'Conflict',
+    message: 'Level order already exists in this game',
+  },
   [ErrorCode.UnknownGame]: {
     statusCode: 404,
     error: 'Not Found',
