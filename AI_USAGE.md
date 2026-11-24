@@ -27,6 +27,9 @@ TBD
 
 | 2026-11-23 | Swagger documentation (#21, UC-007) | Continue with Swagger and leave #32 and #33 unchanged | Codex (active model not shown) drafted the specification, wrote opt-in Swagger configuration and HTTP metadata, and tested the compiled API; GPT-6.1 Sol independently probed the candidate | Ivifer1 approved the specification and design. A false test assumption about the disabled route response body was removed to match existing HTTP behavior. Dependency inspection found installation analytics; project-level opt-out was applied and verified offline. |
 
+| 2026-11-21 | Admin level writes (#32, UC-005) | Implement the approved admin routes and return 409 when order is occupied | Drafted the design and implemented role reload, request decoding, write readiness and tests; verified regression and mutation checks | Ivifer1 confirmed occupied-order semantics and manually approved both documents before source edits |
+| 2026-11-24 | OpenAPI for admin level writes (#32, UC-007) | Begin the approved local Swagger follow-up | Codex added adapter-only OpenAPI metadata and contract tests; a separate test-design handoff checked the body-parser seam against the existing HTTP stack | Ivifer1 approved the design. A local HTTP probe confirmed 413 for POST and PUT before the status was documented. No authorization or persistence behavior changed. |
+
 ## Critical Evaluation
 
 - Approximately 85% of boilerplate, validation, and test scaffolding was generated with AI assistance under strict human architectural supervision.
