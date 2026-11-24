@@ -86,6 +86,41 @@ describe('Administrative level writes (e2e, UC-005)', () => {
     ['delete', `${path}/${fit.id}`],
   ] as const;
 
+  it.each([
+    ['post', path],
+    ['put', `${path}/${fit.id}`],
+  ] as const)(
+    'should_return_413_without_writing_when_level_json_exceeds_the_http_limit_%s',
+    async (method, route) => {
+      // Arrange
+      const before = await snapshot();
+      const limit = 100 * 1024;
+      const allowed = JSON.stringify(fit).padEnd(limit, ' ');
+      const oversized = allowed + ' ';
+
+      // Act
+      const atLimit = await http()[method](route).type('json').send(allowed);
+      const overLimit = await http()
+        [method](route)
+        .auth(adminToken, { type: 'bearer' })
+        .type('json')
+        .send(oversized);
+
+      // Assert
+      expect(Buffer.byteLength(allowed)).toBe(limit);
+      expect(Buffer.byteLength(oversized)).toBe(limit + 1);
+      expect(atLimit.status).toBe(401);
+      expect(atLimit.body).toStrictEqual(
+        errorBody(401, 'Unauthorized', 'Authentication required', route),
+      );
+      expect(overLimit.status).toBe(413);
+      expect(overLimit.body).toStrictEqual(
+        errorBody(413, 'Payload Too Large', 'Request body too large', route),
+      );
+      expect(await snapshot()).toStrictEqual(before);
+    },
+  );
+
   it.each(writeRoutes)(
     'should_return_401_when_write_has_no_valid_token_%s',
     async (method, route) => {
