@@ -155,4 +155,172 @@ describe('First administrator bootstrap (e2e, UC-006)', () => {
     expectRejection(result);
     expect(await snapshot()).toEqual(before);
   });
+
+  it('should_insert_one_admin_when_two_bootstraps_race_with_different_names', async () => {
+    // Arrange
+    await users.createIndex({ username: 1 }, { unique: true });
+    const names = [username, 'other_admin'];
+    const insertOne = mongo.Collection.prototype.insertOne;
+    let arrived = 0;
+    let release = () => {};
+    const bothReady = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    // Force both commands past the precheck before either real insert.
+    const watchdog = setTimeout(release, 2000);
+    const inserts = vi
+      .spyOn(mongo.Collection.prototype, 'insertOne')
+      .mockImplementation(async function (this: mongo.Collection, ...args) {
+        if (++arrived === 2) release();
+        await bothReady;
+        return insertOne.apply(this, args);
+      });
+
+    // Act
+    const results = await Promise.all(
+      names.map((name) => bootstrap([name], envFor(uri))),
+    ).finally(() => {
+      clearTimeout(watchdog);
+      inserts.mockRestore();
+    });
+
+    // Assert
+    expect(arrived).toBe(2);
+    const winners = results.flatMap((result, index) =>
+      result.status === 0 ? [names[index]] : [],
+    );
+    expect(winners).toHaveLength(1);
+    expectRejection(results.find((result) => result.status !== 0)!);
+    expect(await users.find().toArray()).toEqual([
+      expect.objectContaining({
+        _id: reservedId,
+        username: winners[0],
+        role: 'admin',
+      }),
+    ]);
+  });
+
+  it('should_leave_users_unchanged_when_target_or_credentials_are_invalid', async () => {
+    // Arrange
+    await users.createIndex({ username: 1 }, { unique: true });
+    const before = await snapshot();
+    const env = envFor(uri);
+
+    // Act
+    const results = [
+      await bootstrap([username], {}),
+      await bootstrap([username], envFor(serverUri)),
+      await bootstrap(['Bad-Username'], env),
+      await bootstrap([username, 'argument-password'], env),
+      await bootstrap([username], env, 'short\n'),
+      await bootstrap([username], env, ''),
+      await bootstrap([username], env, 'x'.repeat(4097)),
+      await bootstrap([username], env, `${password}\nsecond line\n`),
+      await bootstrap([username], env, undefined, true),
+    ];
+
+    // Assert
+    results.forEach(expectRejection);
+    expect(results[3].output).not.toContain('argument-password');
+    expect(await snapshot()).toEqual(before);
+  });
+
+  it.each([
+    { name: 'missing', options: undefined },
+    { name: 'nonunique', options: {} },
+    {
+      name: 'partial',
+      options: { unique: true, partialFilterExpression: { role: 'admin' } },
+    },
+    { name: 'sparse', options: { unique: true, sparse: true } },
+    {
+      name: 'nonbinary',
+      options: { unique: true, collation: { locale: 'en', strength: 2 } },
+    },
+  ])(
+    'should_fail_without_writing_when_the_username_index_is_$name',
+    async ({ options }) => {
+      // Arrange
+      await db.createCollection('users');
+      if (options) await users.createIndex({ username: 1 }, options);
+      const before = await snapshot();
+
+      // Act
+      const result = await bootstrap([username], envFor(uri));
+
+      // Assert
+      expectRejection(result);
+      expect(await snapshot()).toEqual(before);
+    },
+  );
+
+  it('should_not_create_a_collection_when_users_does_not_exist', async () => {
+    // Arrange: the database has no collections.
+
+    // Act
+    const result = await bootstrap([username], envFor(uri));
+
+    // Assert
+    expectRejection(result);
+    expect(await db.listCollections({}, { nameOnly: true }).toArray()).toEqual(
+      [],
+    );
+  });
+
+  it('should_report_uncertainty_without_retry_when_insert_confirmation_is_lost', async () => {
+    // Arrange
+    await users.createIndex({ username: 1 }, { unique: true });
+    const insertOne = mongo.Collection.prototype.insertOne;
+    let attempts = 0;
+    const inserts = vi
+      .spyOn(mongo.Collection.prototype, 'insertOne')
+      .mockImplementation(async function (this: mongo.Collection, ...args) {
+        attempts += 1;
+        await insertOne.apply(this, args);
+        throw new Error('private driver details: ' + uri);
+      });
+
+    // Act
+    const result = await bootstrap([username], envFor(uri)).finally(() => {
+      inserts.mockRestore();
+    });
+
+    // Assert
+    expect(attempts).toBe(1);
+    expectRejection(result);
+    expect(result.stdout).toEqual([]);
+    expect(result.output).toMatch(/could not confirm.*before retrying/i);
+    expect(result.output).not.toContain('private driver details');
+    expect(result.output).not.toContain(uri);
+    expect(await users.find().toArray()).toEqual([
+      expect.objectContaining({ username, role: 'admin' }),
+    ]);
+  });
+
+  it('should_not_disclose_secrets_when_reading_the_password_fails', async () => {
+    // Arrange
+    await users.createIndex({ username: 1 }, { unique: true });
+    const before = await snapshot();
+    const driverDetail = 'private error diagnostic';
+    async function* brokenInput() {
+      yield Buffer.from(password);
+      throw new Error(`${driverDetail}: ${uri}`);
+    }
+    const lines: string[] = [];
+
+    // Act
+    const status = await runBootstrapFirstAdmin([username], envFor(uri), {
+      input: Readable.from(brokenInput()),
+      out: (line) => lines.push(line),
+      err: (line) => lines.push(line),
+    });
+
+    // Assert
+    expect(status).not.toBe(0);
+    expect(lines.join('\n').trim()).not.toBe('');
+    expect(lines.join('\n')).not.toContain(driverDetail);
+    expect(lines.join('\n')).not.toContain(uri);
+    expect(lines.join('\n')).not.toContain(password.trim());
+    expect(await snapshot()).toEqual(before);
+  });
 });
