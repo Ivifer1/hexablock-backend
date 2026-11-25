@@ -23,6 +23,7 @@ export enum ErrorCode {
   InvalidTopologyId = 'INVALID_TOPOLOGY_ID',
   InvalidSectionKey = 'INVALID_SECTION_KEY',
   InvalidCount = 'INVALID_COUNT',
+  InvalidProgress = 'INVALID_PROGRESS',
   InvalidFitSection = 'INVALID_FIT_SECTION',
   InvalidSortSection = 'INVALID_SORT_SECTION',
   LevelNotFound = 'LEVEL_NOT_FOUND',
