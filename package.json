@@ -16,6 +16,7 @@
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/infrastructure/main",
+    "bootstrap:admin": "node dist/infrastructure/bootstrap/bootstrap-first-admin.js",
     "lint": "oxlint --type-aware src/ test/",
     "test": "vitest run",
     "test:watch": "vitest",
