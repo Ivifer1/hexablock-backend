@@ -29,6 +29,16 @@ export class User {
     return new User(id, username, passwordHash, Role.Player, createdAt);
   }
 
+  // Only the operator bootstrap flow constructs a new administrator.
+  static createFirstAdministrator(
+    id: UserId,
+    username: Username,
+    passwordHash: PasswordHash,
+    createdAt: Date,
+  ): User {
+    return new User(id, username, passwordHash, Role.Admin, createdAt);
+  }
+
   // Rebuilds a stored user, keeping its role.
   static restore(
     id: UserId,

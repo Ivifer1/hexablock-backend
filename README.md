@@ -79,6 +79,37 @@ Run `SWAGGER_ENABLED=true npm run start:dev`, then open [Swagger UI](http://loca
 
 The reference is generated from the active controllers and lists only the routes implemented in this backend. To try the authenticated route, use **Authorize** with a development JWT. The UI does not persist it across browser sessions. Enable documentation only on an instance intended to expose it: anyone with network access to that instance can read the reference.
 
+### Provision the first administrator (UC-006)
+
+Run this once as a database operator. Public registration always creates a player.
+Use an explicitly named database in `MONGODB_URI` from your approved secret source;
+this command does not load a local `.env` file. The target must have an unsharded
+`users` collection with the existing unconditional unique `{ username: 1 }`
+index. The command does not provision or modify indexes.
+
+Build the CLI with `npm run build`. Send a single password line (up to 4 KiB,
+including its line ending) from a private input stream, never from an argument
+or an exported password variable. For example, in zsh or bash, with
+`MONGODB_URI` already set to the intended target:
+
+```sh
+(
+  set +x
+  set +a
+  unset admin_password || exit 1
+  printf 'New administrator password: ' >&2
+  IFS= read -rs admin_password || exit 1
+  printf '\n' >&2
+  printf '%s\n' "$admin_password" | npm run --silent bootstrap:admin -- first_admin
+)
+```
+
+Only a confirmed insert succeeds (exit 0); malformed input returns 2 and a
+prerequisite, conflict or storage failure returns 1. An existing account is
+never promoted or overwritten. If the command cannot confirm the outcome,
+check the target database before retrying. Sign in using the normal login
+endpoint after successful setup.
+
 ## Tests
 
 ```bash
