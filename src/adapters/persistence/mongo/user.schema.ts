@@ -12,6 +12,7 @@ export interface UserDocument {
 
 // Name under which the model is registered in Mongoose.
 export const USER_MODEL = 'User';
+export const USER_COLLECTION = 'users';
 
 export const UserSchema = new Schema<UserDocument>(
   {
@@ -21,5 +22,5 @@ export const UserSchema = new Schema<UserDocument>(
     role: { type: String, required: true },
     createdAt: { type: Date, required: true },
   },
-  { collection: 'users', versionKey: false },
+  { collection: USER_COLLECTION, versionKey: false },
 );

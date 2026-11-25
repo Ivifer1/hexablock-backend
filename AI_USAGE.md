@@ -29,6 +29,7 @@ TBD
 
 | 2026-11-21 | Admin level writes (#32, UC-005) | Implement the approved admin routes and return 409 when order is occupied | Drafted the design and implemented role reload, request decoding, write readiness and tests; verified regression and mutation checks | Ivifer1 confirmed occupied-order semantics and manually approved both documents before source edits |
 | 2026-11-24 | OpenAPI for admin level writes (#32, UC-007) | Begin the approved local Swagger follow-up | Codex added adapter-only OpenAPI metadata and contract tests; a separate test-design handoff checked the body-parser seam against the existing HTTP stack | Ivifer1 approved the design. A local HTTP probe confirmed 413 for POST and PUT before the status was documented. No authorization or persistence behavior changed. |
+| 2026-11-21 | First administrator bootstrap (#33, UC-006) | Implement the approved first-administrator setup without accessing a real database | Design, insert-only CLI, concurrent and failure regression tests, and isolated mutation checks | Ivifer1 approved the case and proposal before implementation; verifier exercised the compiled command against isolated MongoDB only |
 
 ## Critical Evaluation
 
