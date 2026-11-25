@@ -124,6 +124,8 @@ T1: five timestamp checks failed as expected before implementation. After implem
 
 T2: 29 HTTP and OpenAPI cases were RED before the routes and schemas existed, then passed. The compiled comparison kept eight existing public HTTP outcomes and all prior OpenAPI content unchanged. Independent design/functional inspection found no blockers; its own executions were blocked by the sandbox. The two resulting boundary probes are included with the public-API tests. Final: 41 focused HTTP/Swagger tests, 238 unit/architecture and 161 integration/E2E. Typecheck, lint (same three pre-existing warnings), and build passed.
 
+Scoped correction: game lookup now precedes progress field validation for a parsed JSON body. The JSON parser leaves values intact for all routes but records whether a progress number lost precision; only the progress mapper rejects those values. No change to existing malformed-body or size handling. Final checks: 11 number-lexeme unit tests, 43 focused HTTP/Swagger tests, 249 unit/architecture tests and 163 integration/E2E tests; typecheck, lint and build passed. The compiled comparison preserved ten neighboring HTTP cases and the full OpenAPI document.
+
 ## AI usage
 
 Recorded in the root AI_USAGE.md. Ivifer1 approved the use case, design and API details before changes. Local verification and differential comparison used isolated test MongoDB only.

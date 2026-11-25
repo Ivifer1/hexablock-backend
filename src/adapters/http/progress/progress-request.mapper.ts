@@ -7,6 +7,7 @@ import { DomainError } from '../../../domain/shared/domain-error.js';
 import { ErrorCode } from '../../../domain/shared/error-code.js';
 import { Optional } from '../../../domain/shared/optional.js';
 import { RequestValidationError } from '../request-validation.error.js';
+import { wasRoundedProgressNumber } from './progress-json-numbers.js';
 
 function invalid(field: string, message: string): never {
   throw new RequestValidationError([{ field, message }]);
@@ -32,8 +33,18 @@ function fields(
   if (extra !== undefined) invalid(path, 'Contains an undocumented field');
 }
 
-function count(value: unknown, field: string): Count {
-  if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
+function count(
+  holder: Record<string, unknown>,
+  key: string,
+  field: string,
+): Count {
+  const value = ownField(holder, key);
+  if (
+    typeof value !== 'number' ||
+    !Number.isSafeInteger(value) ||
+    value < 0 ||
+    wasRoundedProgressNumber(holder, key)
+  ) {
     invalid(field, 'Expected a nonnegative safe integer');
   }
   return Count.of(value);
@@ -74,7 +85,7 @@ export class ProgressRequestMapper {
       bestScore:
         score === null
           ? Optional.empty()
-          : Optional.of(count(score, 'bestScore')),
+          : Optional.of(count(body, 'bestScore', 'bestScore')),
       levels: Object.entries(record(ownField(body, 'levels'), 'levels')).map(
         ([key, value]) => this.toLevel(key, value),
       ),
@@ -89,14 +100,14 @@ export class ProgressRequestMapper {
     const completed = ownField(entry, 'completed');
     if (typeof completed !== 'boolean')
       invalid(path + '.completed', 'Expected a boolean');
-    const stars = count(ownField(entry, 'stars'), path + '.stars');
+    const stars = count(entry, 'stars', path + '.stars');
     if (Count.of(3).isLessThan(stars))
       invalid(path + '.stars', 'Expected at most three stars');
     return LevelProgress.of(
       id,
       completed,
       stars,
-      count(ownField(entry, 'bestScore'), path + '.bestScore'),
+      count(entry, 'bestScore', path + '.bestScore'),
     );
   }
 }
