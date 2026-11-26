@@ -9,7 +9,7 @@ Date: 2026-11-25
 
 - Issue #56, approved [UC-010](../../specs/use-cases/UC-010-submit-personal-best-score.md), BR-010-1 through BR-010-6.
 - Requirements: FR-005, NFR-001, NFR-002 and NFR-004; approved score submission rule.
-- Scope: submit one attempt and return the retained best for that player and ranking. No ranking reads (#57), game replay, progress synchronization, catalog changes, deployment or live data.
+- Scope: submit one attempt and return the retained best for that player and ranking. No ranking reads (#57), game replay, progress synchronization, deployment or live data. The approved shared registration records progress behavior and ranking scope separately.
 
 ## Problem
 
@@ -61,6 +61,8 @@ Register each game once in backend composition. Its definition records progress 
 
 Once #55 has an integrated baseline, move exact JSON-number validation into one shared HTTP component that supports both progress fields and the submitted score. Preserve existing HTTP results. This decision does not authorize importing #55's unintegrated work or adding a second game registry while it is unresolved.
 
+The #55 baseline is now integrated in `main` at `60f1eaf`. T3 reuses its shared exact-number parser and the approved single game registration; progress and score persistence/use cases remain separate.
+
 ## Clean Architecture and SOLID
 
 - HTTP adapter → application use case and ports → domain. The Mongo adapter implements the writer port using the existing clock port. Composition owns concrete bindings and variant data.
@@ -99,13 +101,17 @@ Use a fake clock, deterministic overlap probes and in-memory MongoDB. Observe ta
 
 T2a implements the independent domain. The integration worktree carries that slice on the merged progress baseline (60f1eaf).
 
-T2b implements the guarded writer in the separate `personal_bests` collection. It requires the approved unique index, verifies a primary read with its exact hint, and records the score and server time in the same confirmed update. Reads and writes outside the score repository are unchanged. The application and HTTP wiring remain pending.
+T2b implements the guarded writer in the separate `personal_bests` collection. It requires the approved unique index, verifies a primary read with its exact hint, and records the score and server time in the same confirmed update. Reads and writes outside the score repository are unchanged.
+
+T3 wires `POST /scores` through a JWT-protected HTTP adapter, an application use case, the shared game/ranking registration, level lookup, and the Mongo writer port. Exact JSON number validation is shared with progress; OpenAPI documents both ranking response shapes. T3 is locally verified; the UML update is intentionally deferred until the end.
 
 ## Verification
 
 T2a: 8 focused and 241 unit/architecture tests; two isolated mutations detected. Typecheck, lint and build passed. No MongoDB or HTTP suite executed for this slice.
 
-T2b: 18 focused repository cases and 181 integration/E2E tests excluding the intentionally red score endpoint file; 257 unit/architecture tests, typecheck, lint and build pass. The independent verifier found no structural blocker and supplied two deterministic overlap and acknowledgement probes executed locally. No production data or index was touched.
+T2b: 18 focused repository cases and 181 integration/E2E tests excluding the intentionally red score endpoint file; 257 unit/architecture tests, typecheck, lint and build pass. The independent verifier found no structural blocker and supplied two deterministic overlap and acknowledgement probes executed locally. Native review approved and was acknowledged; four advisory findings remain follow-ups. No production data or index was touched.
+
+T3: 10 new public E2E cases observed RED as missing-route 404s before implementation. Then 62 focused score/progress/OpenAPI tests, 257 unit/architecture tests, 200 full integration/E2E tests, typecheck and build passed. Lint passed with three pre-existing warnings after fixing one new test warning. The full suite logs expected simulated-error messages from error-path tests. No production data or remote changes.
 
 ## AI usage
 

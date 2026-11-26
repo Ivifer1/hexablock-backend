@@ -2,7 +2,7 @@ import type { GameId } from '../../domain/game/game-id.js';
 import { Optional } from '../../domain/shared/optional.js';
 import type { UserId } from '../../domain/user/user-id.js';
 import type { IProgressRepository } from '../ports/progress-repository.js';
-import type { IGameProgressCatalog } from '../progress/game-progress-catalog.js';
+import type { IGameProgressCatalog } from '../game-catalog.js';
 import {
   toProgressView,
   type ProgressView,

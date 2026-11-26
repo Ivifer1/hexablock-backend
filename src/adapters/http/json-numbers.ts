@@ -1,8 +1,7 @@
-// Keep the ordinary parsed values for every route. Progress validation also
-// checks the original number text so it never accepts a rounded value.
+// Keep parsed numbers unchanged while remembering fields that rounded on parse.
 const roundedNumbers = new WeakMap<object, Set<string>>();
 
-export function isExactProgressInteger(
+export function isExactNonnegativeSafeInteger(
   source: string | undefined,
   value: number,
 ): boolean {
@@ -16,7 +15,6 @@ export function isExactProgressInteger(
   if (sign === '-') return false;
   const shift = Number(exponent) - fraction.length;
   if (shift >= 0) {
-    // No allocation can be driven by a large exponent or coefficient.
     return (
       digits.length + shift <= 16 &&
       digits + '0'.repeat(shift) === String(value)
@@ -30,17 +28,19 @@ export function isExactProgressInteger(
   );
 }
 
-export function recordProgressNumber(
+const EXACT_INTEGER_FIELDS = new Set(['bestScore', 'stars', 'score']);
+
+export function recordExactJsonNumber(
   this: object,
   key: string,
   value: unknown,
   context?: { readonly source?: string },
 ): unknown {
   if (
-    (key === 'bestScore' || key === 'stars') &&
+    EXACT_INTEGER_FIELDS.has(key) &&
     typeof value === 'number' &&
     Number.isSafeInteger(value) &&
-    !isExactProgressInteger(context?.source, value)
+    !isExactNonnegativeSafeInteger(context?.source, value)
   ) {
     const previous = roundedNumbers.get(this);
     if (previous) previous.add(key);
@@ -49,6 +49,6 @@ export function recordProgressNumber(
   return value;
 }
 
-export function wasRoundedProgressNumber(holder: object, key: string): boolean {
+export function wasRoundedJsonNumber(holder: object, key: string): boolean {
   return roundedNumbers.get(holder)?.has(key) ?? false;
 }

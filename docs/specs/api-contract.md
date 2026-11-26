@@ -10,8 +10,9 @@ documentation generated from the code must match this contract; when one changes
 - Authentication: `Authorization: Bearer <accessToken>` on the routes marked 🔒. 🔑 means admin only.
 - Every variant is addressed by its `gameId` (`hexa-lines`, `hexa-fit`, `hexa-sort`, `hexa-merge`). No route names a
   variant: a new variant is a new `gameId`, not a new route.
-- Each `gameId` is registered with its progress model: **best score** (`hexa-lines`, `hexa-merge`) or **levels**
-  (`hexa-fit`, `hexa-sort`). An unknown `gameId` returns `404`.
+- Each `gameId` is registered once with independent progress behavior and ranking scope. **Best-score progress and
+  game-wide ranking** apply to `hexa-lines` and `hexa-merge`; **level progress and per-level ranking** apply to
+  `hexa-fit` and `hexa-sort`. An unknown `gameId` returns `404`.
 - Dates are ISO 8601 strings in UTC.
 
 ## Errors
@@ -151,11 +152,20 @@ policy produces the number. Ties are ranked by who reached the score first.
 { "gameId": "hexa-fit", "levelId": "fit-001", "score": 120 }
 ```
 
-- `levelId` is required for level variants and must be absent for best-score variants.
-- `score`: integer ≥ 0.
+- The bearer token identifies the player. The body accepts only `gameId`, `score` and optional `levelId`; identity
+  and achievement time are never client-supplied.
+- `levelId` is required for level-ranked variants and must be absent for game-wide rankings. It must belong to
+  `gameId` at submission time.
+- `score`: an exact, nonnegative safe integer from this single attempt; the server does not coerce strings,
+  fractions, nulls or rounded JSON numbers.
 
-`201`: `{ "gameId": "hexa-fit", "levelId": "fit-001", "score": 120, "personalBest": true }`.
-`personalBest` says whether the leaderboard entry changed. Errors: `400`, `401`, `404`.
+`201` for a level ranking: `{ "gameId": "hexa-fit", "levelId": "fit-001", "score": 120, "personalBest": true }`.
+For game-wide ranking, `levelId` is omitted: `{ "gameId": "hexa-lines", "score": 120, "personalBest": true }`.
+Request `score` is the result of the current attempt. Response `score` is the retained personal best.
+`personalBest` is true when this submission creates or strictly improves the record. Equal or lower results
+do not change when the best score was achieved. For example, submitting 80 with a record of 120 returns
+`score: 120` and `personalBest: false`. Errors: `400` (invalid fields or level membership), `401`, `404` (unknown
+game), `413` (oversized body) and `500` (unexpected error or unconfirmed save).
 
 #### `GET /leaderboard/{gameId}?levelId=&limit=`
 

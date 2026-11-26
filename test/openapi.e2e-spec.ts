@@ -13,6 +13,7 @@ interface ContractSchema {
   readonly required?: readonly string[];
   readonly properties: Record<string, ContractSchema>;
   readonly items: ContractSchema;
+  readonly oneOf?: readonly ContractSchema[];
 }
 
 interface JsonContent {
@@ -46,6 +47,7 @@ const operations = [
   ['get', '/api/v1/levels/{id}', ['200', '404', '500']],
   ['post', '/api/v1/auth/login', ['200', '400', '401', '413', '500']],
   ['post', '/api/v1/auth/register', ['201', '400', '409', '413', '500']],
+  ['post', '/api/v1/scores', ['201', '400', '401', '404', '413', '500']],
 ] as const;
 
 const adminLevelOperations = [
@@ -246,7 +248,7 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
       const operation = document.paths[path][method];
       expect(Object.keys(operation.responses)).toEqual(codes);
       const auth = operation.security ?? [];
-      if (path === '/api/v1/auth/me') {
+      if (path === '/api/v1/auth/me' || path === '/api/v1/scores') {
         expect(auth).toHaveLength(1);
         const [scheme] = Object.keys(auth[0]);
         expect(auth[0][scheme]).toEqual([]);
@@ -330,6 +332,23 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
     expect(
       jsonSchema(document, register.responses['409']).properties,
     ).not.toHaveProperty('details');
+
+    const submitScore = document.paths['/api/v1/scores'].post;
+    expect(submitScore.security).toEqual([{ bearer: [] }]);
+    expect(submitScore.requestBody?.required).toBe(true);
+    const scoreInput = jsonSchema(document, submitScore.requestBody!);
+    expect(scoreInput).toMatchObject({
+      required: ['gameId', 'score'],
+      additionalProperties: false,
+      properties: {
+        gameId: { type: 'string' },
+        levelId: { type: 'string' },
+        score: { type: 'integer', minimum: 0, maximum: Number.MAX_SAFE_INTEGER },
+      },
+    });
+    const scoreResult = jsonSchema(document, submitScore.responses['201']);
+    expect(scoreResult.oneOf).toHaveLength(2);
+    expect(submitScore.responses['400']).toBeDefined();
   });
 
   it.each(adminLevelOperations)(

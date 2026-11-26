@@ -3,7 +3,7 @@ import type {
   IProgressRepository,
   ProgressInput,
 } from '../ports/progress-repository.js';
-import type { IGameProgressCatalog } from '../progress/game-progress-catalog.js';
+import type { IGameProgressCatalog } from '../game-catalog.js';
 import { ProgressInputError } from '../progress/progress-model.js';
 import {
   toProgressView,

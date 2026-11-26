@@ -7,7 +7,7 @@ import { DomainError } from '../../../domain/shared/domain-error.js';
 import { ErrorCode } from '../../../domain/shared/error-code.js';
 import { Optional } from '../../../domain/shared/optional.js';
 import { RequestValidationError } from '../request-validation.error.js';
-import { wasRoundedProgressNumber } from './progress-json-numbers.js';
+import { wasRoundedJsonNumber } from '../json-numbers.js';
 
 function invalid(field: string, message: string): never {
   throw new RequestValidationError([{ field, message }]);
@@ -43,7 +43,7 @@ function count(
     typeof value !== 'number' ||
     !Number.isSafeInteger(value) ||
     value < 0 ||
-    wasRoundedProgressNumber(holder, key)
+    wasRoundedJsonNumber(holder, key)
   ) {
     invalid(field, 'Expected a nonnegative safe integer');
   }

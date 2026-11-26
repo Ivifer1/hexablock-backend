@@ -15,7 +15,9 @@ type Model =
   | 'ProgressInput'
   | 'Progress'
   | 'SavedProgress'
-  | 'ProgressList';
+  | 'ProgressList'
+  | 'ScoreInput'
+  | 'ScoreResponse';
 
 export const jwtSchemeName = 'bearer';
 
@@ -73,6 +75,48 @@ const scoreInput: SchemaObject = {
   required: ['bestScore', 'levels'],
   additionalProperties: false,
   properties: { bestScore: safeScore, levels: noLevels },
+};
+const scoreSubmission: SchemaObject = {
+  type: 'object',
+  required: ['gameId', 'score'],
+  additionalProperties: false,
+  properties: {
+    gameId: { type: 'string', example: 'hexa-lines' },
+    levelId: {
+      type: 'string',
+      description: 'Required only for games ranked by level.',
+      example: 'fit-003',
+    },
+    score: {
+      ...safeScore,
+      description: 'The score from this single finished attempt.',
+    },
+  },
+};
+const scoreResponse: SchemaObject = {
+  oneOf: [
+    {
+      type: 'object',
+      required: ['gameId', 'score', 'personalBest'],
+      additionalProperties: false,
+      properties: {
+        gameId: { type: 'string' },
+        score: safeScore,
+        personalBest: { type: 'boolean' },
+      },
+    },
+    {
+      type: 'object',
+      required: ['gameId', 'levelId', 'score', 'personalBest'],
+      additionalProperties: false,
+      properties: {
+        gameId: { type: 'string' },
+        levelId: { type: 'string' },
+        score: safeScore,
+        personalBest: { type: 'boolean' },
+      },
+    },
+  ],
 };
 const levelInput: SchemaObject = {
   ...scoreInput,
@@ -232,4 +276,6 @@ export const apiSchemas: Record<Model, SchemaObject> = {
       },
     },
   },
+  ScoreInput: scoreSubmission,
+  ScoreResponse: scoreResponse,
 };
