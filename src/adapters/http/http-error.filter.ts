@@ -41,6 +41,11 @@ const DOMAIN_ERRORS: Partial<Record<ErrorCode, HttpError>> = {
     error: 'Not Found',
     message: 'Game not found',
   },
+  [ErrorCode.GameNotFound]: {
+    statusCode: 404,
+    error: 'Not Found',
+    message: 'Game not found',
+  },
   [ErrorCode.LevelNotFound]: {
     statusCode: 404,
     error: 'Not Found',

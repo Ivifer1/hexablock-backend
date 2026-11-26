@@ -17,9 +17,9 @@ import {
 } from '@nestjs/swagger';
 import type { AuthUser } from '../../../application/ports/token-issuer.js';
 import {
-  GameProgressCatalog,
+  GameCatalog,
   type IGameProgressCatalog,
-} from '../../../application/progress/game-progress-catalog.js';
+} from '../../../application/game-catalog.js';
 import { ProgressInputError } from '../../../application/progress/progress-model.js';
 import { GetGameProgressUseCase } from '../../../application/use-cases/get-game-progress.use-case.js';
 import { ListPlayerProgressUseCase } from '../../../application/use-cases/list-player-progress.use-case.js';
@@ -53,7 +53,7 @@ export class ProgressController {
     private readonly syncProgress: SyncPlayerProgressUseCase,
     @Inject(ProgressRequestMapper)
     private readonly input: ProgressRequestMapper,
-    @Inject(GameProgressCatalog)
+    @Inject(GameCatalog)
     private readonly catalog: IGameProgressCatalog,
   ) {}
 

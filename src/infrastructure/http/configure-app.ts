@@ -1,6 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import type { NestExpressApplication } from '@nestjs/platform-express';
-import { recordProgressNumber } from '../../adapters/http/progress/progress-json-numbers.js';
+import { recordExactJsonNumber } from '../../adapters/http/json-numbers.js';
 import { HttpErrorFilter } from '../../adapters/http/http-error.filter.js';
 import { IClock } from '../../application/ports/clock.js';
 import { CLOCK } from '../tokens.js';
@@ -11,7 +11,7 @@ import { configureOpenApi } from './configure-openapi.js';
 export function configureApp(app: INestApplication): void {
   // Prefix business routes; keep the health check and optional docs unprefixed.
   (app as NestExpressApplication).useBodyParser('json', {
-    reviver: recordProgressNumber,
+    reviver: recordExactJsonNumber,
   });
   app.setGlobalPrefix('api/v1', { exclude: ['health'] });
   app.useGlobalFilters(

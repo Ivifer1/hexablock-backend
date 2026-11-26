@@ -1,4 +1,4 @@
-import { isExactProgressInteger } from '../../../src/adapters/http/progress/progress-json-numbers.js';
+import { isExactNonnegativeSafeInteger as isExactProgressInteger } from '../../../src/adapters/http/json-numbers.js';
 
 describe('Progress JSON numeric accuracy', () => {
   it.each([

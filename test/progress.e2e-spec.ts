@@ -328,6 +328,11 @@ describe('Player progress (e2e, UC-009)', () => {
     ['score in a level game', fit.gameId, score(10)],
     ['array of progress', fit.gameId, { bestScore: null, levels: [] }],
     ['foreign user', 'hexa-lines', { ...score(200), userId: 'someone-else' }],
+    [
+      'score submission field',
+      'hexa-lines',
+      { ...score(1), score: 2 },
+    ],
     ['injected game', 'hexa-lines', { ...score(200), gameId: fit.gameId }],
     ['injected date', 'hexa-lines', { ...score(200), updatedAt: firstAt }],
     [
