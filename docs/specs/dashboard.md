@@ -12,5 +12,6 @@ Progress is measured by behaviour that is specified, implemented and verified, n
 | UC-007 Read API documentation | NFR-001, NFR-002 | Verified locally | ✓ | — | ✓ | ✓ | Native review and CI pending |
 | UC-008 Retain player progress | FR-003, FR-004, NFR-004 | Verified locally | ✓ | ✓ | ✓ | ✓ | Native review and publication pending |
 | UC-009 Read and sync player progress | FR-003, FR-004, NFR-001, NFR-002, NFR-004 | Verified locally | ✓ | ✓ | ✓ | ✓ | Native review and publication pending |
+| UC-010 Submit a score and receive the current personal best | FR-005, NFR-001, NFR-002, NFR-004 | Verified locally | ✓ | — | ✓ | ✓ | Native review and CI pending; UML deferred as requested |
 
 Status flow: Draft → Reviewed → Approved → Implemented → Verified → Deployed.

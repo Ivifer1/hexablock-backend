@@ -13,7 +13,7 @@ import {
 import type { IClock } from '../../application/ports/clock.js';
 import type { IProgressRepository } from '../../application/ports/progress-repository.js';
 import type { ILevelRepository } from '../../application/ports/level-repository.js';
-import { GameProgressCatalog } from '../../application/progress/game-progress-catalog.js';
+import { GameCatalog } from '../../application/game-catalog.js';
 import {
   BestScoreProgressModel,
   LevelProgressModel,
@@ -41,19 +41,21 @@ export const PROGRESS_REPOSITORY = Symbol('IProgressRepository');
   providers: [
     ProgressRequestMapper,
     {
-      provide: GameProgressCatalog,
+      provide: GameCatalog,
       useFactory: () => {
         const score = new BestScoreProgressModel();
-        return new GameProgressCatalog([
-          { game: GameId.of('hexa-lines'), model: score },
-          { game: GameId.of('hexa-merge'), model: score },
+        return new GameCatalog([
+          { game: GameId.of('hexa-lines'), model: score, ranking: 'game' },
+          { game: GameId.of('hexa-merge'), model: score, ranking: 'game' },
           {
             game: GameId.of('hexa-fit'),
             model: new LevelProgressModel(Count.of(3)),
+            ranking: 'level',
           },
           {
             game: GameId.of('hexa-sort'),
             model: new LevelProgressModel(Count.of(0)),
+            ranking: 'level',
           },
         ]);
       },
@@ -68,18 +70,18 @@ export const PROGRESS_REPOSITORY = Symbol('IProgressRepository');
       provide: GetGameProgressUseCase,
       useFactory: (
         progress: IProgressRepository,
-        catalog: GameProgressCatalog,
+        catalog: GameCatalog,
       ) => new GetGameProgressUseCase(progress, catalog),
-      inject: [PROGRESS_REPOSITORY, GameProgressCatalog],
+      inject: [PROGRESS_REPOSITORY, GameCatalog],
     },
     {
       provide: SyncPlayerProgressUseCase,
       useFactory: (
         progress: IProgressRepository,
-        catalog: GameProgressCatalog,
+        catalog: GameCatalog,
         levels: ILevelRepository,
       ) => new SyncPlayerProgressUseCase(progress, catalog, levels),
-      inject: [PROGRESS_REPOSITORY, GameProgressCatalog, LEVEL_REPOSITORY],
+      inject: [PROGRESS_REPOSITORY, GameCatalog, LEVEL_REPOSITORY],
     },
     {
       provide: PROGRESS_REPOSITORY,
@@ -97,6 +99,6 @@ export const PROGRESS_REPOSITORY = Symbol('IProgressRepository');
       inject: [getModelToken(PROGRESS_MODEL), CLOCK],
     },
   ],
-  exports: [PROGRESS_REPOSITORY],
+  exports: [PROGRESS_REPOSITORY, GameCatalog],
 })
 export class ProgressModule {}
