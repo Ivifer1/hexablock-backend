@@ -119,7 +119,7 @@ One progress entry per user and `gameId` (brief, section 5.2).
 
 #### `GET /progress` 🔒
 
-`200`: `{ "items": [ <progress>, ... ] }`, one item per variant the user has played. Errors: `401`.
+`200`: `{ "items": [ <progress>, ... ] }`, one item per variant with saved progress. Errors: `401`, `500`.
 
 #### `GET /progress/{gameId}` 🔒
 

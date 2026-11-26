@@ -58,6 +58,10 @@ const adminLevelOperations = [
   ['delete', '/api/v1/levels/{id}', ['204', '401', '403', '404', '500']],
 ] as const;
 
+const progressOperations = [
+  ['get', '/api/v1/progress', ['200', '401', '500']],
+] as const;
+
 function readSchema(
   document: ContractDocument,
   schema: ContractSchema,
@@ -166,10 +170,27 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
       Object.keys(item).map((method) => `${method} ${path}`),
     );
     expect(listed.sort()).toEqual(
-      [...operations, ...adminLevelOperations]
+      [...operations, ...adminLevelOperations, ...progressOperations]
         .map(([method, path]) => `${method} ${path}`)
         .sort(),
     );
+  });
+
+  it('should_document_progress_authentication_and_shapes_when_openapi_is_enabled', async () => {
+    // Arrange
+    const http = await start('true');
+
+    // Act
+    const response = await http.get('/docs-json');
+    const document = response.body as ContractDocument;
+
+    // Assert
+    expect(response.status).toBe(200);
+    for (const [method, path, codes] of progressOperations) {
+      const operation = document.paths[path][method];
+      expect(Object.keys(operation.responses)).toEqual(codes);
+      expect(operation.security).toEqual([{ bearer: [] }]);
+    }
   });
 
   it('should_describe_the_actual_http_contract_when_client_requests_openapi_json', async () => {
