@@ -11,5 +11,6 @@ Progress is measured by behaviour that is specified, implemented and verified, n
 | UC-005 Manage level definitions | FR-009, FR-010 | Verified locally | ✓ | — | ✓ | ✓ | CI/publication pending |
 | UC-007 Read API documentation | NFR-001, NFR-002 | Verified locally | ✓ | — | ✓ | ✓ | Native review and CI pending |
 | UC-008 Retain player progress | FR-003, FR-004, NFR-004 | Verified locally | ✓ | ✓ | ✓ | ✓ | Native review and publication pending |
+| UC-009 Read and sync player progress | FR-003, FR-004, NFR-001, NFR-002, NFR-004 | Approved | — | — | — | — | Technical design proposed; human review pending |
 
 Status flow: Draft → Reviewed → Approved → Implemented → Verified → Deployed.
