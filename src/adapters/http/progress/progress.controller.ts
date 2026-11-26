@@ -1,24 +1,34 @@
 import {
+  Body,
   Controller,
   Get,
   Inject,
   Param,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiOkResponse,
   ApiOperation,
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
 import type { AuthUser } from '../../../application/ports/token-issuer.js';
+import {
+  GameProgressCatalog,
+  type IGameProgressCatalog,
+} from '../../../application/progress/game-progress-catalog.js';
+import { ProgressInputError } from '../../../application/progress/progress-model.js';
 import { GetGameProgressUseCase } from '../../../application/use-cases/get-game-progress.use-case.js';
 import { ListPlayerProgressUseCase } from '../../../application/use-cases/list-player-progress.use-case.js';
+import { SyncPlayerProgressUseCase } from '../../../application/use-cases/sync-player-progress.use-case.js';
 import { UserId } from '../../../domain/user/user-id.js';
 import { CurrentUser } from '../auth/current-user.decorator.js';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard.js';
 import { ApiHttpError, jwtSchemeName, schemaRef } from '../openapi.schemas.js';
+import { RequestValidationError } from '../request-validation.error.js';
 import { ProgressRequestMapper } from './progress-request.mapper.js';
 import {
   toProgressResponse,
@@ -39,8 +49,12 @@ export class ProgressController {
     private readonly listProgress: ListPlayerProgressUseCase,
     @Inject(GetGameProgressUseCase)
     private readonly getProgress: GetGameProgressUseCase,
+    @Inject(SyncPlayerProgressUseCase)
+    private readonly syncProgress: SyncPlayerProgressUseCase,
     @Inject(ProgressRequestMapper)
     private readonly input: ProgressRequestMapper,
+    @Inject(GameProgressCatalog)
+    private readonly catalog: IGameProgressCatalog,
   ) {}
 
   @Get()
@@ -77,4 +91,43 @@ export class ProgressController {
     );
   }
 
+  @Put(':gameId')
+  @ApiOperation({ summary: 'Retain the best progress for one game' })
+  @ApiParam(gameParameter)
+  @ApiBody({ required: true, schema: schemaRef('ProgressInput') })
+  @ApiHttpError(
+    400,
+    'Malformed JSON, invalid progress or a level outside this game.',
+  )
+  @ApiHttpError(404, 'Invalid or unknown game ID.')
+  @ApiHttpError(413, 'Request body too large.')
+  @ApiOkResponse({
+    description: 'Confirmed retained progress.',
+    schema: schemaRef('SavedProgress'),
+  })
+  async sync(
+    @CurrentUser() user: AuthUser,
+    @Param('gameId') rawGame: string,
+    @Body() body: unknown,
+  ): Promise<ProgressResponse> {
+    const gameId = this.input.toGameId(rawGame);
+    this.catalog.modelFor(gameId);
+    const draft = this.input.toDraft(body);
+    try {
+      return toProgressResponse(
+        await this.syncProgress.execute({
+          userId: UserId.of(user.id),
+          gameId,
+          ...draft,
+        }),
+      );
+    } catch (error) {
+      if (error instanceof ProgressInputError) {
+        throw new RequestValidationError([
+          { field: error.field, message: error.message },
+        ]);
+      }
+      throw error;
+    }
+  }
 }
