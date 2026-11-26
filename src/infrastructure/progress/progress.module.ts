@@ -19,6 +19,7 @@ import {
 } from '../../application/progress/progress-model.js';
 import { ListPlayerProgressUseCase } from '../../application/use-cases/list-player-progress.use-case.js';
 import { GetGameProgressUseCase } from '../../application/use-cases/get-game-progress.use-case.js';
+import { SyncPlayerProgressUseCase } from '../../application/use-cases/sync-player-progress.use-case.js';
 import { GameId } from '../../domain/game/game-id.js';
 import { Count } from '../../domain/shared/count.js';
 import { AuthModule } from '../auth/auth.module.js';
@@ -66,6 +67,14 @@ export const PROGRESS_REPOSITORY = Symbol('IProgressRepository');
         progress: IProgressRepository,
         catalog: GameProgressCatalog,
       ) => new GetGameProgressUseCase(progress, catalog),
+      inject: [PROGRESS_REPOSITORY, GameProgressCatalog],
+    },
+    {
+      provide: SyncPlayerProgressUseCase,
+      useFactory: (
+        progress: IProgressRepository,
+        catalog: GameProgressCatalog,
+      ) => new SyncPlayerProgressUseCase(progress, catalog),
       inject: [PROGRESS_REPOSITORY, GameProgressCatalog],
     },
     {

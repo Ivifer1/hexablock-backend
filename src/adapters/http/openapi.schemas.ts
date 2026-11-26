@@ -10,6 +10,7 @@ type Model =
   | 'Level'
   | 'LevelList'
   | 'LevelProgressEntry'
+  | 'ScoreProgressInput'
   | 'Progress'
   | 'SavedProgress'
   | 'ProgressList';
@@ -201,6 +202,7 @@ export const apiSchemas: Record<Model, SchemaObject> = {
       bestScore: safeScore,
     },
   },
+  ScoreProgressInput: scoreInput,
   Progress: progressResponse({
     ...savedAt,
     nullable: true,

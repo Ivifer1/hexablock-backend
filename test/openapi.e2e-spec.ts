@@ -61,6 +61,11 @@ const adminLevelOperations = [
 const progressOperations = [
   ['get', '/api/v1/progress', ['200', '401', '500']],
   ['get', '/api/v1/progress/{gameId}', ['200', '401', '404', '500']],
+  [
+    'put',
+    '/api/v1/progress/{gameId}',
+    ['200', '400', '401', '404', '413', '500'],
+  ],
 ] as const;
 
 function readSchema(
@@ -206,6 +211,16 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
     expect(
       jsonSchema(document, keyed.get.responses['200']).properties.updatedAt,
     ).toMatchObject({ type: 'string', format: 'date-time', nullable: true });
+    expect(
+      jsonSchema(document, keyed.put.responses['200']).properties.updatedAt,
+    ).not.toMatchObject({ nullable: true });
+    expect(jsonSchema(document, keyed.put.requestBody!).required).toEqual([
+      'bestScore',
+      'levels',
+    ]);
+    expect(jsonSchema(document, keyed.put.responses['400'])).toEqual(
+      document.components.schemas.BadRequest,
+    );
   });
 
   it('should_describe_the_actual_http_contract_when_client_requests_openapi_json', async () => {

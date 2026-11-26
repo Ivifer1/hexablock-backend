@@ -113,7 +113,7 @@ One progress entry per user and `gameId` (brief, section 5.2).
 }
 ```
 
-- Best-score variants use `bestScore` (integer ≥ 0) and leave `levels` empty.
+- Best-score variants use `bestScore` (nonnegative safe integer) and leave `levels` empty.
 - Level variants use `levels`, keyed by level id; `bestScore` is `null`. `stars` (0–3) is used by variants with stars
   (Hexa Fit) and stays `0` otherwise.
 
