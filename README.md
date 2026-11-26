@@ -110,6 +110,17 @@ never promoted or overwritten. If the command cannot confirm the outcome,
 check the target database before retrying. Sign in using the normal login
 endpoint after successful setup.
 
+### Progress storage (UC-008)
+
+Progress uses one document per user and game. Before enabling progress writes,
+provision a completed, visible, non-sparse and non-partial unique index on
+(userId ascending, gameId ascending) with simple collation in the progress
+collection. Keep that index in place while saves are enabled. The application
+never creates or changes it. MongoDB must accept the exact index for the write
+path's initial read; catalog listing alone is not enough.
+
+Public progress routes and game/level validation are separate work (#55).
+
 ## Tests
 
 ```bash
