@@ -102,13 +102,11 @@ A new variant that uses an existing progress model adds a composition registrati
 
 Run focused RED first, then focused checks, lint, types, unit/architecture tests, integration/E2E and build. Authenticate with isolated test accounts and use in-memory MongoDB. Independently verify authentication and concurrent writes after implementation.
 
-## Open questions for the team
+## API details approved with this design
 
-These API details are not settled by approval of UC-009:
-
-- For a malformed path game ID, propose the same `404 Game not found` as for an unregistered game. A malformed JSON body still uses the existing parsing error.
-- Reject identity and timestamp fields as specified. Propose also rejecting undocumented body fields with `400` rather than ignoring client mistakes.
-- Propose accepting only nonnegative integers exactly representable by the JavaScript number type at the HTTP boundary, without changing shared `Count`. Confirm that this technical limit belongs in the API contract; the current contract names no score maximum.
+- A malformed or unregistered game ID resolves to `404 Game not found`. Malformed JSON still uses the existing parser error.
+- Reject undocumented body fields, including identity, game and timestamp, with the existing `400` validation envelope.
+- Scores are nonnegative JavaScript safe integers at the HTTP boundary. Shared `Count` is unchanged.
 
 ## Diagram impact
 
@@ -118,10 +116,14 @@ After verified implementation, review B1–B6 for the affected domain types, use
 
 T1: The port accepts undated progress values, and the Mongo adapter reuses the configured server clock. Value comparison occurs against the current primary read before consuming the clock or attempting a revision replacement; retries recompute after a revision miss. HTTP operations are not implemented in this slice.
 
+T2: Three guarded HTTP operations now share the policy registry. The level repository is consulted only when the submitted snapshot includes levels; submitted IDs outside the game fail before progress is saved. The API contract and generated OpenAPI document the same behavior.
+
 ## Verification
 
 T1: five timestamp checks failed as expected before implementation. After implementation and the independently proposed retry-no-op probe, 18 focused MongoDB integration checks, 238 unit/architecture tests, 131 integration/E2E tests, types and build passed. Lint exited zero with the same three warnings as the base. The independent verifier reviewed the guarded write and supplied the additional probe; sandbox restrictions prevented that verifier from running it. The orchestrator executed it in isolated local MongoDB.
 
+T2: 29 HTTP and OpenAPI cases were RED before the routes and schemas existed, then passed. The compiled comparison kept eight existing public HTTP outcomes and all prior OpenAPI content unchanged. Independent design/functional inspection found no blockers; its own executions were blocked by the sandbox. The two resulting boundary probes are included with the public-API tests. Final: 41 focused HTTP/Swagger tests, 238 unit/architecture and 161 integration/E2E. Typecheck, lint (same three pre-existing warnings), and build passed.
+
 ## AI usage
 
-_(pending)_
+Recorded in the root AI_USAGE.md. Ivifer1 approved the use case, design and API details before changes. Local verification and differential comparison used isolated test MongoDB only.

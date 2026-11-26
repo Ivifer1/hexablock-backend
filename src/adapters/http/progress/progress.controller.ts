@@ -88,7 +88,7 @@ export class ProgressController {
   @Put(':gameId')
   @ApiOperation({ summary: 'Retain the best progress for one game' })
   @ApiParam(gameParameter)
-  @ApiBody({ required: true, schema: schemaRef('ScoreProgressInput') })
+  @ApiBody({ required: true, schema: schemaRef('ProgressInput') })
   @ApiHttpError(
     400,
     'Malformed JSON, invalid progress or a level outside this game.',
