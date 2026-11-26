@@ -4,6 +4,7 @@ Progress is measured by behaviour that is specified, implemented and verified, n
 
 | Use case | Linked FR | UC status | Code | Unit | Integration / E2E | Regression | Integrity |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| UC-011 Read leaderboard | FR-006, FR-007 | Verified locally | ✓ | ✓ | ✓ | ✓ | HTTP native review and CI pending; diagram deferred |
 | UC-001 Register | FR-001 | Draft | ✓ | ✓ | ✓ | — | Weak (spec not reviewed by the team yet) |
 | UC-002 Login | FR-002 | Draft | ✓ | ✓ | ✓ | — | Weak (spec not reviewed by the team yet) |
 | UC-003 Current user | FR-002 | Draft | ✓ | ✓ | ✓ | — | Weak (spec not reviewed by the team yet) |
