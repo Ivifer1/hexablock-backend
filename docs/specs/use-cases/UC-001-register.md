@@ -9,7 +9,10 @@
 | Linked requirements | FR-001, NFR-002, NFR-003 |
 | Entities | User, Session / Token |
 
+Documentation reconciliation: this specification remains `Draft`; implementation and integration do not grant human approval. Registration is implemented and covered by the integrated backend checks recorded in the [dashboard](../dashboard.md). This note does not change the business rules below.
+
 ## Preconditions
+
 - The player has no session.
 
 ## Trigger
