@@ -5,6 +5,7 @@ import { Test } from '@nestjs/testing';
 import type { Connection } from 'mongoose';
 import request from 'supertest';
 import type { App } from 'supertest/types.js';
+import fit from '../docs/specs/levels/hexa-fit.example.json' with { type: 'json' };
 import {
   PROGRESS_COLLECTION,
   PROGRESS_KEY,
@@ -14,12 +15,29 @@ import { configureApp } from '../src/infrastructure/http/configure-app.js';
 import { CLOCK } from '../src/infrastructure/tokens.js';
 
 const path = '/api/v1/progress';
+const gamePath = (gameId: string) => path + '/' + gameId;
 const firstAt = '2026-11-25T09:00:00.000Z';
+const score = (bestScore: number) => ({ bestScore, levels: {} });
+const level = (completed: boolean, stars: number, bestScore: number) => ({
+  completed,
+  stars,
+  bestScore,
+});
+const levels = (entries: Record<string, ReturnType<typeof level>> = {}) => ({
+  bestScore: null,
+  levels: entries,
+});
+const progress = (
+  gameId: string,
+  snapshot: object,
+  updatedAt: string | null,
+) => ({ gameId, ...snapshot, updatedAt });
 
 describe('Player progress (e2e, UC-009)', () => {
   let app: INestApplication<App>;
   let connection: Connection;
   let player: { id: string; token: string };
+  let other: { id: string; token: string };
   let now = firstAt;
 
   const http = () => request(app.getHttpServer());
@@ -62,6 +80,7 @@ describe('Player progress (e2e, UC-009)', () => {
 
   it.each([
     ['get', path],
+    ['get', gamePath(fit.gameId)],
   ] as const)(
     'should_reject_invalid_sessions_when_calling_%s_%s',
     async (method, route) => {
@@ -93,15 +112,44 @@ describe('Player progress (e2e, UC-009)', () => {
     },
   );
 
-  it('should_return_no_items_without_writing_when_player_has_no_progress', async () => {
-    // Arrange: no records for the signed-in player.
+  it('should_return_empty_defaults_without_writing_when_no_progress_is_saved', async () => {
+    // Arrange: neither player has a saved record.
 
     // Act
-    const reply = await get(path);
+    const replies = await Promise.all([
+      get(path),
+      get(gamePath('hexa-lines')),
+      get(gamePath(fit.gameId)),
+    ]);
 
     // Assert
-    expect(reply.status).toBe(200);
-    expect(reply.body).toEqual({ items: [] });
+    expect(replies.map(({ status }) => status)).toEqual([200, 200, 200]);
+    expect(replies.map(({ body }) => body)).toEqual([
+      { items: [] },
+      progress('hexa-lines', score(0), null),
+      progress(fit.gameId, levels(), null),
+    ]);
     expect(await records().countDocuments()).toBe(0);
   });
+
+  it.each(['unknown-game', 'INVALID'])(
+    'should_return_not_found_when_game_is_%s',
+    async (gameId) => {
+      // Arrange
+      const route = gamePath(gameId);
+
+      // Act
+      const replies = [await get(route)];
+
+      // Assert
+      for (const reply of replies)
+        expect(reply.body).toMatchObject({
+          statusCode: 404,
+          message: 'Game not found',
+          path: route,
+        });
+      expect(await records().countDocuments()).toBe(0);
+    },
+  );
+
 });

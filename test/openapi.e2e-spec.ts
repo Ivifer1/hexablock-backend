@@ -60,6 +60,7 @@ const adminLevelOperations = [
 
 const progressOperations = [
   ['get', '/api/v1/progress', ['200', '401', '500']],
+  ['get', '/api/v1/progress/{gameId}', ['200', '401', '404', '500']],
 ] as const;
 
 function readSchema(
@@ -190,7 +191,21 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
       const operation = document.paths[path][method];
       expect(Object.keys(operation.responses)).toEqual(codes);
       expect(operation.security).toEqual([{ bearer: [] }]);
+      if (path.includes('{gameId}'))
+        expect(operation.parameters).toEqual(
+          expect.arrayContaining([
+            expect.objectContaining({
+              in: 'path',
+              name: 'gameId',
+              required: true,
+            }),
+          ]),
+        );
     }
+    const keyed = document.paths['/api/v1/progress/{gameId}'];
+    expect(
+      jsonSchema(document, keyed.get.responses['200']).properties.updatedAt,
+    ).toMatchObject({ type: 'string', format: 'date-time', nullable: true });
   });
 
   it('should_describe_the_actual_http_contract_when_client_requests_openapi_json', async () => {

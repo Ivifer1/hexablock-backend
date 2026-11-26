@@ -124,7 +124,7 @@ One progress entry per user and `gameId` (brief, section 5.2).
 #### `GET /progress/{gameId}` 🔒
 
 `200`: the progress. A variant never played returns an empty progress (`bestScore` `0` or `null`, `levels` `{}`),
-not `404`. Errors: `401`, `404` (unknown `gameId`).
+not `404`, and has `updatedAt: null`. Errors: `401`, `404` (invalid or unknown `gameId`), `500`.
 
 #### `PUT /progress/{gameId}` 🔒
 
