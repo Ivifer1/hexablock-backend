@@ -27,7 +27,7 @@ import {
 } from './create-level-repository.js';
 import { createLevelValidator } from './create-level-validator.js';
 
-const LEVEL_REPOSITORY = Symbol('ILevelRepository');
+export const LEVEL_REPOSITORY = Symbol('ILevelRepository');
 const LEVEL_WRITE_READINESS = Symbol('ILevelWriteReadiness');
 const readSchema = LevelSchema.clone();
 readSchema.set('autoCreate', false);
@@ -39,6 +39,7 @@ readSchema.set('autoIndex', false);
     MongooseModule.forFeature([{ name: LEVEL_MODEL, schema: readSchema }]),
   ],
   controllers: [LevelsController, AdminLevelsController],
+  exports: [LEVEL_REPOSITORY],
   providers: [
     RolesGuard,
     {

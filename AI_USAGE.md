@@ -32,6 +32,8 @@ TBD
 | 2026-11-21 | First administrator bootstrap (#33, UC-006) | Implement the approved first-administrator setup without accessing a real database | Design, insert-only CLI, concurrent and failure regression tests, and isolated mutation checks | Ivifer1 approved the case and proposal before implementation; verifier exercised the compiled command against isolated MongoDB only |
 | 2026-11-25 | Progress persistence (#54, UC-008) | Begin #54 after closing #33 | Drafted the approved proposal, implemented value-based domain merge and revision-guarded Mongo storage, and ran isolated verification | Independent review identified an unfinished index could look ready. The in-memory repro confirmed the problem and the named-index hint rejected it before writing. |
 
+| 2026-11-25 | Authenticated progress API (#55, UC-009) | Prepare the use case, preserve dates on no-op syncs, and implement approved routes | Drafted and implemented the approved design with unit/integration/E2E checks and independent review | Ivifer1 approved the use case, API details and design; exact old HTTP and OpenAPI behavior was compared on compiled local servers. |
+
 ## Critical Evaluation
 
 - Approximately 85% of boilerplate, validation, and test scaffolding was generated with AI assistance under strict human architectural supervision.

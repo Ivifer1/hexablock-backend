@@ -17,6 +17,7 @@ export enum ErrorCode {
   InvalidCoordinate = 'INVALID_COORDINATE',
   InvalidBoard = 'INVALID_BOARD',
   UnknownGame = 'UNKNOWN_GAME',
+  ProgressGameNotFound = 'PROGRESS_GAME_NOT_FOUND',
   WrongLevelSection = 'WRONG_LEVEL_SECTION',
   UnknownTopology = 'UNKNOWN_TOPOLOGY',
   BoardNotConnected = 'BOARD_NOT_CONNECTED',
