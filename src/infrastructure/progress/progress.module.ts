@@ -12,6 +12,7 @@ import {
 } from '../../adapters/persistence/mongo/progress.schema.js';
 import type { IClock } from '../../application/ports/clock.js';
 import type { IProgressRepository } from '../../application/ports/progress-repository.js';
+import type { ILevelRepository } from '../../application/ports/level-repository.js';
 import { GameProgressCatalog } from '../../application/progress/game-progress-catalog.js';
 import {
   BestScoreProgressModel,
@@ -22,6 +23,7 @@ import { GetGameProgressUseCase } from '../../application/use-cases/get-game-pro
 import { SyncPlayerProgressUseCase } from '../../application/use-cases/sync-player-progress.use-case.js';
 import { GameId } from '../../domain/game/game-id.js';
 import { Count } from '../../domain/shared/count.js';
+import { LevelsModule, LEVEL_REPOSITORY } from '../levels/levels.module.js';
 import { AuthModule } from '../auth/auth.module.js';
 import { CLOCK } from '../tokens.js';
 
@@ -30,6 +32,7 @@ export const PROGRESS_REPOSITORY = Symbol('IProgressRepository');
 @Module({
   imports: [
     AuthModule,
+    LevelsModule,
     MongooseModule.forFeature([
       { name: PROGRESS_MODEL, schema: ProgressSchema },
     ]),
@@ -74,8 +77,9 @@ export const PROGRESS_REPOSITORY = Symbol('IProgressRepository');
       useFactory: (
         progress: IProgressRepository,
         catalog: GameProgressCatalog,
-      ) => new SyncPlayerProgressUseCase(progress, catalog),
-      inject: [PROGRESS_REPOSITORY, GameProgressCatalog],
+        levels: ILevelRepository,
+      ) => new SyncPlayerProgressUseCase(progress, catalog, levels),
+      inject: [PROGRESS_REPOSITORY, GameProgressCatalog, LEVEL_REPOSITORY],
     },
     {
       provide: PROGRESS_REPOSITORY,

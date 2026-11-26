@@ -214,10 +214,18 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
     expect(
       jsonSchema(document, keyed.put.responses['200']).properties.updatedAt,
     ).not.toMatchObject({ nullable: true });
-    expect(jsonSchema(document, keyed.put.requestBody!).required).toEqual([
-      'bestScore',
-      'levels',
-    ]);
+    expect(jsonSchema(document, keyed.put.requestBody!)).toMatchObject({
+      oneOf: [
+        { $ref: '#/components/schemas/ScoreProgressInput' },
+        { $ref: '#/components/schemas/LevelProgressInput' },
+      ],
+    });
+    expect(
+      document.components.schemas.LevelProgressInput.properties.levels,
+    ).toMatchObject({
+      type: 'object',
+      additionalProperties: { $ref: '#/components/schemas/LevelProgressEntry' },
+    });
     expect(jsonSchema(document, keyed.put.responses['400'])).toEqual(
       document.components.schemas.BadRequest,
     );

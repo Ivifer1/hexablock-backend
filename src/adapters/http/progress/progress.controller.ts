@@ -16,6 +16,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import type { AuthUser } from '../../../application/ports/token-issuer.js';
+import {
+  GameProgressCatalog,
+  type IGameProgressCatalog,
+} from '../../../application/progress/game-progress-catalog.js';
 import { ProgressInputError } from '../../../application/progress/progress-model.js';
 import { GetGameProgressUseCase } from '../../../application/use-cases/get-game-progress.use-case.js';
 import { ListPlayerProgressUseCase } from '../../../application/use-cases/list-player-progress.use-case.js';
@@ -49,6 +53,8 @@ export class ProgressController {
     private readonly syncProgress: SyncPlayerProgressUseCase,
     @Inject(ProgressRequestMapper)
     private readonly input: ProgressRequestMapper,
+    @Inject(GameProgressCatalog)
+    private readonly catalog: IGameProgressCatalog,
   ) {}
 
   @Get()
@@ -88,7 +94,7 @@ export class ProgressController {
   @Put(':gameId')
   @ApiOperation({ summary: 'Retain the best progress for one game' })
   @ApiParam(gameParameter)
-  @ApiBody({ required: true, schema: schemaRef('ScoreProgressInput') })
+  @ApiBody({ required: true, schema: schemaRef('ProgressInput') })
   @ApiHttpError(
     400,
     'Malformed JSON, invalid progress or a level outside this game.',
@@ -105,6 +111,7 @@ export class ProgressController {
     @Body() body: unknown,
   ): Promise<ProgressResponse> {
     const gameId = this.input.toGameId(rawGame);
+    this.catalog.modelFor(gameId);
     const draft = this.input.toDraft(body);
     try {
       return toProgressResponse(

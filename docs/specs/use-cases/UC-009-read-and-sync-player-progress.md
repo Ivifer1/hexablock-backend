@@ -68,6 +68,6 @@
 - Reject malformed snapshots, invalid score or star values, and level IDs not belonging to the game; verify that stored progress is unchanged.
 - Document the three routes and their response and error formats in Swagger when implemented.
 
-Contract alignment pending: specify the nullable empty-read timestamp and no-op sync semantics in the API contract and Swagger when this draft is approved.
+See the API contract and Swagger for the nullable empty-read timestamp and no-op sync semantics.
 
 References: [#55](https://github.com/Ivifer1/hexablock-backend/issues/55), [API contract — Progress](../api-contract.md#progress).

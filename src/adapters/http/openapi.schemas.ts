@@ -11,6 +11,8 @@ type Model =
   | 'LevelList'
   | 'LevelProgressEntry'
   | 'ScoreProgressInput'
+  | 'LevelProgressInput'
+  | 'ProgressInput'
   | 'Progress'
   | 'SavedProgress'
   | 'ProgressList';
@@ -203,6 +205,10 @@ export const apiSchemas: Record<Model, SchemaObject> = {
     },
   },
   ScoreProgressInput: scoreInput,
+  LevelProgressInput: levelInput,
+  ProgressInput: {
+    oneOf: [schemaRef('ScoreProgressInput'), schemaRef('LevelProgressInput')],
+  },
   Progress: progressResponse({
     ...savedAt,
     nullable: true,
