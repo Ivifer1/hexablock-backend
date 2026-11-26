@@ -138,7 +138,7 @@ value of every field, so syncing from an offline device never loses a record:
 `200`: the merged progress. The server assigns `updatedAt` in UTC when it creates or improves the saved
 record. A valid sync that leaves progress unchanged keeps the existing timestamp. Errors: `400`
 (invalid values or a level ID that does not belong to `gameId`), `401`, `404` (invalid or unknown
-`gameId`), `413` (oversized request), `500` (unexpected error or unconfirmed write).
+`gameId`), `413` (oversized request), `500` (unexpected error or unconfirmed write). An invalid or unknown game is checked before field validation; malformed JSON is rejected by the existing parser.
 
 ### Scores and leaderboard
 

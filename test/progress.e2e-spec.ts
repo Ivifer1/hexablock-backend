@@ -202,6 +202,31 @@ describe('Player progress (e2e, UC-009)', () => {
     expect(await records().countDocuments()).toBe(3);
   });
 
+  it('should_return_not_found_before_body_validation_when_the_game_is_unregistered', async () => {
+    // Arrange
+    const game = 'unknown-game';
+
+    // Act
+    const reply = await put(game, {});
+
+    // Assert
+    expect(reply.status).toBe(404);
+    expect(reply.body).toMatchObject({ message: 'Game not found' });
+    expect(await records().countDocuments()).toBe(0);
+  });
+
+  it('should_accept_an_exact_integral_value_when_json_uses_exponent_notation', async () => {
+    // Arrange
+    const game = 'hexa-lines';
+
+    // Act
+    const reply = await put(game, '{"bestScore":1.25e2,"levels":{}}');
+
+    // Assert
+    expect(reply.status).toBe(200);
+    expect(reply.body).toEqual(progress(game, score(125), firstAt));
+  });
+
   it('should_preserve_best_score_and_date_when_a_score_game_replays', async () => {
     // Arrange
     const initial = await put('hexa-merge', score(90));
