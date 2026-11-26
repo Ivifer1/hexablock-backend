@@ -4,10 +4,11 @@ import { AuthModule } from './auth/auth.module.js';
 import { DatabaseModule } from './database/database.module.js';
 import { LevelsModule } from './levels/levels.module.js';
 import { ProgressModule } from './progress/progress.module.js';
+import { ScoresModule } from './scores/scores.module.js';
 
 // Composition root: wires adapters and use cases together.
 @Module({
-  imports: [DatabaseModule, AuthModule, LevelsModule, ProgressModule],
+  imports: [DatabaseModule, AuthModule, LevelsModule, ProgressModule, ScoresModule],
   controllers: [HealthController],
   providers: [],
 })

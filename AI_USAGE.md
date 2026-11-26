@@ -33,6 +33,7 @@ TBD
 | 2026-11-25 | Progress persistence (#54, UC-008) | Begin #54 after closing #33 | Drafted the approved proposal, implemented value-based domain merge and revision-guarded Mongo storage, and ran isolated verification | Independent review identified an unfinished index could look ready. The in-memory repro confirmed the problem and the named-index hint rejected it before writing. |
 
 | 2026-11-25 | Authenticated progress API (#55, UC-009) | Prepare the use case, preserve dates on no-op syncs, and implement approved routes | Drafted and implemented the approved design with unit/integration/E2E checks and independent review | Ivifer1 approved the use case, API details and design; exact old HTTP and OpenAPI behavior was compared on compiled local servers. |
+| 2026-11-26 | Personal-best score submission (#56, UC-010) | Continue the approved local score feature on the integrated #55 baseline | Added guarded personal-best persistence, authenticated score submission, shared game/ranking registration, exact JSON score validation, OpenAPI and regression tests | Ivifer1 approved the use case/design; the T2b candidate review was approved and acknowledged. The new T3 candidate review is pending; no production data or remote repository was changed. The shared diagram remains deferred. |
 
 ## Critical Evaluation
 
