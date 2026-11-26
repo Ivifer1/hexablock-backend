@@ -12,8 +12,8 @@ The client repo has its own catalog; cross-repo references use `client:FR-###`.
 | FR-003 | An authenticated user can sync their progress; there is exactly one progress entry per user and `gameId`. | 5.2 |
 | FR-004 | An authenticated user can read their progress, filtered by `gameId`. | 5.2 |
 | FR-005 | An authenticated user can submit a score for a `gameId` (and level, for level-based variants). | 5.2 |
-| FR-006 | Anyone can read the global leaderboard for a `gameId`. | 5.2 |
-| FR-007 | For level-based variants, the leaderboard can be read per `gameId` and level. | 5.2 |
+| FR-006 | Signed-in players can read the shared game-wide leaderboard for a `gameId`. | 5.2 |
+| FR-007 | Signed-in players can read a level-based leaderboard per `gameId` and level. | 5.2 |
 | FR-008 | Clients can get the level definitions of Hexa Fit and Hexa Sort. | 5.2 |
 | FR-009 | Level definitions can be created and updated so new levels ship without an app update. | 5.2 |
 | FR-010 | The level format is generic: one schema with a common part and a `gameId`-specific section. | 5.2 |

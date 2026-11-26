@@ -167,10 +167,14 @@ do not change when the best score was achieved. For example, submitting 80 with 
 `score: 120` and `personalBest: false`. Errors: `400` (invalid fields or level membership), `401`, `404` (unknown
 game), `413` (oversized body) and `500` (unexpected error or unconfirmed save).
 
-#### `GET /leaderboard/{gameId}?levelId=&limit=`
+#### `GET /leaderboard/{gameId}?levelId=&limit=` 🔒
 
 - `levelId`: required for level variants (leaderboard per level), absent otherwise.
-- `limit`: 1–100, default 10.
+- `limit`: one decimal integer from 1–100, default 10 only when omitted; leading zeroes are allowed.
+- Both ranking types require a bearer session. Unknown query fields, repeated scalars and blank values return 400.
+- Higher scores come first, then earlier achievement times. Exact score/time ties share competition ranks (1, 1, 3).
+- Only current public usernames, scores, dates and ranks are returned. A missing or invalid selected user fails the entire read.
+- A valid empty ranking returns `entries: []`; game-wide responses omit `levelId`. Reads never create or change scores or indexes.
 
 `200`:
 
@@ -184,7 +188,11 @@ game), `413` (oversized body) and `500` (unexpected error or unconfirmed save).
 }
 ```
 
-Errors: `400`, `404`.
+Errors: `400` (invalid query, malformed game ID or missing/foreign level), `401`, `404` (unknown game), `500` (read failure).
+
+The separate non-unique read index is `{ gameId: 1, levelId: 1, score: -1, achievedAt: 1, userId: 1 }`
+with simple collation (`leaderboard_order`). Provision it outside request handling; automatic index creation is disabled.
+Retain the existing personal-best uniqueness index. Internal user IDs stabilize a limited prefix but never break a rank tie.
 
 ### Levels
 
