@@ -1,5 +1,7 @@
 # Spec dashboard
 
+| UC-011 Read leaderboard | FR-006, FR-007 | Verified locally | ✓ | ✓ | ✓ | ✓ | HTTP native review and CI pending; diagram deferred |
+
 Progress is measured by behaviour that is specified, implemented and verified, not by closed tickets.
 
 | Use case | Linked FR | UC status | Code | Unit | Integration / E2E | Regression | Integrity |

@@ -41,6 +41,7 @@ interface ContractDocument {
 }
 
 const operations = [
+  ['get', '/api/v1/leaderboard/{gameId}', ['200', '400', '401', '404', '500']],
   ['get', '/health', ['200']],
   ['get', '/api/v1/auth/me', ['200', '401', '500']],
   ['get', '/api/v1/levels', ['200', '400', '404', '500']],
@@ -248,7 +249,11 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
       const operation = document.paths[path][method];
       expect(Object.keys(operation.responses)).toEqual(codes);
       const auth = operation.security ?? [];
-      if (path === '/api/v1/auth/me' || path === '/api/v1/scores') {
+      if (
+        path === '/api/v1/auth/me' ||
+        path === '/api/v1/scores' ||
+        path === '/api/v1/leaderboard/{gameId}'
+      ) {
         expect(auth).toHaveLength(1);
         const [scheme] = Object.keys(auth[0]);
         expect(auth[0][scheme]).toEqual([]);
@@ -343,7 +348,11 @@ describe('Read the running API documentation (e2e, UC-007)', () => {
       properties: {
         gameId: { type: 'string' },
         levelId: { type: 'string' },
-        score: { type: 'integer', minimum: 0, maximum: Number.MAX_SAFE_INTEGER },
+        score: {
+          type: 'integer',
+          minimum: 0,
+          maximum: Number.MAX_SAFE_INTEGER,
+        },
       },
     });
     const scoreResult = jsonSchema(document, submitScore.responses['201']);

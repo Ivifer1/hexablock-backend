@@ -1,5 +1,7 @@
 # AI Usage
 
+<!-- #57 implementation: authenticated leaderboard query, bounded public Mongo projection, competition ranks, HTTP validation and Swagger. Verified with disposable MongoDB only; no live data or publication. Native review of the Mongo slice approved; HTTP candidate review remains pending. -->
+
 ## Tools
 
 TBD
