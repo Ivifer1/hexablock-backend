@@ -6,6 +6,11 @@ import { Optional } from '../shared/optional.js';
 import type { UserId } from '../user/user-id.js';
 import { greaterCount, type LevelProgress } from './level-progress.js';
 
+export type ProgressValues = Pick<
+  Progress,
+  'userId' | 'gameId' | 'bestScore' | 'levels'
+>;
+
 export class Progress {
   readonly levels: readonly LevelProgress[];
   private readonly recordedAt: Date;
@@ -56,6 +61,45 @@ export class Progress {
       Optional.empty<Count>(),
       unique,
       updatedAt,
+    );
+  }
+
+  static fromValues(values: ProgressValues, updatedAt: Date): Progress {
+    if (values.bestScore.isPresent()) {
+      if (values.levels.length !== 0) {
+        throw new DomainError(ErrorCode.InvalidProgress);
+      }
+      return Progress.forScore(
+        values.userId,
+        values.gameId,
+        values.bestScore.get(),
+        updatedAt,
+      );
+    }
+    return Progress.forLevels(
+      values.userId,
+      values.gameId,
+      values.levels,
+      updatedAt,
+    );
+  }
+
+  hasSameValues(other: Progress): boolean {
+    if (
+      !this.userId.equals(other.userId) ||
+      !this.gameId.equals(other.gameId) ||
+      this.bestScore.isPresent() !== other.bestScore.isPresent()
+    ) {
+      return false;
+    }
+    if (this.bestScore.isPresent()) {
+      return this.bestScore.get().equals(other.bestScore.get());
+    }
+    return (
+      this.levels.length === other.levels.length &&
+      this.levels.every((level) =>
+        other.levels.some((candidate) => level.equals(candidate)),
+      )
     );
   }
 

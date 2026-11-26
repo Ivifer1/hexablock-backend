@@ -1,7 +1,11 @@
 import { mongo } from 'mongoose';
-import type { IProgressRepository } from '../../../application/ports/progress-repository.js';
+import type { IClock } from '../../../application/ports/clock.js';
+import type {
+  IProgressRepository,
+  ProgressInput,
+} from '../../../application/ports/progress-repository.js';
 import type { GameId } from '../../../domain/game/game-id.js';
-import type { Progress } from '../../../domain/progress/progress.js';
+import { Progress } from '../../../domain/progress/progress.js';
 import { Optional } from '../../../domain/shared/optional.js';
 import type { UserId } from '../../../domain/user/user-id.js';
 import { ProgressMapper } from './progress.mapper.js';
@@ -68,6 +72,7 @@ function lookup(userId: UserId, gameId: GameId) {
 export class MongoProgressRepository implements IProgressRepository {
   constructor(
     private readonly collection: mongo.Collection<ProgressDocument>,
+    private readonly clock: IClock,
   ) {}
 
   async find(userId: UserId, gameId: GameId): Promise<Optional<Progress>> {
@@ -85,7 +90,7 @@ export class MongoProgressRepository implements IProgressRepository {
     return docs.map(ProgressMapper.toDomain);
   }
 
-  async saveBest(snapshot: Progress): Promise<Progress> {
+  async saveBest(snapshot: ProgressInput): Promise<Progress> {
     const indexes = await this.collection
       .listIndexes({ readPreference: 'primary' })
       .toArray();
@@ -102,30 +107,36 @@ export class MongoProgressRepository implements IProgressRepository {
       });
       if (!current) {
         try {
+          const first = Progress.fromValues(snapshot, this.clock.now());
           const result = await this.collection.insertOne(
-            ProgressMapper.toDocument(snapshot, 0),
+            ProgressMapper.toDocument(first, 0),
           );
           if (!result.acknowledged)
             throw new Error('Progress insert was not acknowledged');
-          return snapshot;
+          return first;
         } catch (error) {
           if (!isPairCollision(error, key)) throw error;
           continue;
         }
       }
 
-      const merged = ProgressMapper.toDomain(current).mergedWith(snapshot);
+      const stored = ProgressMapper.toDomain(current);
+      const incoming = Progress.fromValues(snapshot, stored.updatedAt);
+      const merged = stored.mergedWith(incoming);
+      if (stored.hasSameValues(merged)) return stored;
+
       const nextRevision = current.revision + 1;
       if (!Number.isSafeInteger(nextRevision))
         throw new Error('Progress revision exhausted');
+      const changed = Progress.fromValues(merged, this.clock.now());
       const result = await this.collection.replaceOne(
         { ...key, _id: current._id, revision: current.revision },
-        ProgressMapper.toDocument(merged, nextRevision),
+        ProgressMapper.toDocument(changed, nextRevision),
         { collation: PROGRESS_COLLATION },
       );
       if (!result.acknowledged)
         throw new Error('Progress update was not acknowledged');
-      if (result.matchedCount === 1) return merged;
+      if (result.matchedCount === 1) return changed;
     }
     throw new Error('Could not save progress after concurrent changes');
   }

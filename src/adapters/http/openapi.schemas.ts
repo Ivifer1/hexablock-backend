@@ -8,7 +8,14 @@ type Model =
   | 'Error'
   | 'BadRequest'
   | 'Level'
-  | 'LevelList';
+  | 'LevelList'
+  | 'LevelProgressEntry'
+  | 'ScoreProgressInput'
+  | 'LevelProgressInput'
+  | 'ProgressInput'
+  | 'Progress'
+  | 'SavedProgress'
+  | 'ProgressList';
 
 export const jwtSchemeName = 'bearer';
 
@@ -41,6 +48,54 @@ const error: SchemaObject = {
     timestamp: { type: 'string', format: 'date-time' },
   },
 };
+
+const safeScore: SchemaObject = {
+  type: 'integer',
+  minimum: 0,
+  maximum: Number.MAX_SAFE_INTEGER,
+};
+const noBestScore: SchemaObject = {
+  type: 'integer',
+  nullable: true,
+  enum: [null],
+};
+const noLevels: SchemaObject = {
+  type: 'object',
+  maxProperties: 0,
+  additionalProperties: false,
+};
+const levelProgressMap: SchemaObject = {
+  type: 'object',
+  additionalProperties: schemaRef('LevelProgressEntry'),
+};
+const scoreInput: SchemaObject = {
+  type: 'object',
+  required: ['bestScore', 'levels'],
+  additionalProperties: false,
+  properties: { bestScore: safeScore, levels: noLevels },
+};
+const levelInput: SchemaObject = {
+  ...scoreInput,
+  properties: { bestScore: noBestScore, levels: levelProgressMap },
+};
+const savedAt: SchemaObject = { type: 'string', format: 'date-time' };
+
+function progressResponse(updatedAt: SchemaObject): SchemaObject {
+  return {
+    type: 'object',
+    required: ['gameId', 'bestScore', 'levels', 'updatedAt'],
+    properties: {
+      gameId: { type: 'string' },
+      bestScore: { ...safeScore, nullable: true },
+      levels: levelProgressMap,
+      updatedAt,
+    },
+    oneOf: [
+      { properties: scoreInput.properties },
+      { properties: levelInput.properties },
+    ],
+  };
+}
 
 // These describe the existing wire contract. Request parsing and validation
 // remain the responsibility of the existing HTTP adapters and value objects.
@@ -133,6 +188,37 @@ export const apiSchemas: Record<Model, SchemaObject> = {
         },
       },
     },
+  },
+  LevelProgressEntry: {
+    type: 'object',
+    required: ['completed', 'stars', 'bestScore'],
+    additionalProperties: false,
+    properties: {
+      completed: { type: 'boolean' },
+      stars: {
+        type: 'integer',
+        minimum: 0,
+        maximum: 3,
+        description: 'Zero if the game does not award stars.',
+      },
+      bestScore: safeScore,
+    },
+  },
+  ScoreProgressInput: scoreInput,
+  LevelProgressInput: levelInput,
+  ProgressInput: {
+    oneOf: [schemaRef('ScoreProgressInput'), schemaRef('LevelProgressInput')],
+  },
+  Progress: progressResponse({
+    ...savedAt,
+    nullable: true,
+    description: 'Null when no progress has been saved.',
+  }),
+  SavedProgress: progressResponse(savedAt),
+  ProgressList: {
+    type: 'object',
+    required: ['items'],
+    properties: { items: { type: 'array', items: schemaRef('SavedProgress') } },
   },
   LevelList: {
     type: 'object',

@@ -8,6 +8,8 @@ import { GameId } from '../../../src/domain/game/game-id.js';
 import { LevelId } from '../../../src/domain/level/level-id.js';
 import { LevelProgress } from '../../../src/domain/progress/level-progress.js';
 import { Progress } from '../../../src/domain/progress/progress.js';
+import type { ProgressInput } from '../../../src/application/ports/progress-repository.js';
+import { Optional } from '../../../src/domain/shared/optional.js';
 import { Count } from '../../../src/domain/shared/count.js';
 import { UserId } from '../../../src/domain/user/user-id.js';
 
@@ -36,7 +38,7 @@ describe('MongoProgressRepository (integration, UC-008)', () => {
     client = await new mongo.MongoClient(inject('mongoUri')).connect();
     database = client.db('uc008-' + randomUUID());
     collection = database.collection<ProgressDocument>('progress');
-    repository = new MongoProgressRepository(collection);
+    repository = new MongoProgressRepository(collection, { now: () => date });
   });
 
   afterEach(async () => {
@@ -51,6 +53,146 @@ describe('MongoProgressRepository (integration, UC-008)', () => {
   async function createRequiredIndex() {
     await collection.createIndex({ userId: 1, gameId: 1 }, { unique: true });
   }
+
+  describe('UC-009 server timestamps', () => {
+    const firstAt = new Date('2026-11-25T01:00:00.000Z');
+    const laterAt = new Date('2026-11-25T02:00:00.000Z');
+    const fitKey = { userId: player.toString(), gameId: fit.toString() };
+    const input = (...levels: LevelProgress[]): ProgressInput => ({
+      userId: player,
+      gameId: fit,
+      bestScore: Optional.empty<Count>(),
+      levels,
+    });
+
+    it('should_record_server_timestamp_when_progress_is_first_saved', async () => {
+      // Arrange
+      await createRequiredIndex();
+      const store = new MongoProgressRepository(collection, {
+        now: () => firstAt,
+      });
+      const initial = input(level('fit-001', true, 1, 120));
+
+      // Act
+      const saved = await store.saveBest(initial);
+      const persisted = await collection.findOne(fitKey);
+
+      // Assert
+      expect(saved.updatedAt).toEqual(firstAt);
+      expect(persisted).toMatchObject({ updatedAt: firstAt, revision: 0 });
+    });
+
+    it.each(['identical', 'stale'] as const)(
+      'should_preserve_timestamp_and_revision_when_replay_is_%s',
+      async (replay) => {
+        // Arrange
+        await createRequiredIndex();
+        let now = firstAt;
+        const store = new MongoProgressRepository(collection, {
+          now: () => now,
+        });
+        const savedLevels = [
+          level('fit-001', true, 2, 120),
+          level('fit-002', true, 1, 20),
+        ];
+        const initial = await store.saveBest(input(...savedLevels));
+        const storedBefore = await collection.findOne(fitKey);
+        const insert = vi.spyOn(collection, 'insertOne');
+        const replace = vi.spyOn(collection, 'replaceOne');
+        now = laterAt;
+        const incomingLevels =
+          replay === 'identical'
+            ? [...savedLevels].reverse()
+            : [level('fit-001', false, 1, 80)];
+
+        // Act
+        const saved = await store.saveBest(input(...incomingLevels));
+        const persisted = await collection.findOne(fitKey);
+
+        // Assert
+        expect(saved).toEqual(initial);
+        expect(persisted).toEqual(storedBefore);
+        expect(insert).not.toHaveBeenCalled();
+        expect(replace).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each([
+      {
+        field: 'stars',
+        incoming: level('fit-001', false, 3, 80),
+        retained: level('fit-001', true, 3, 120),
+      },
+      {
+        field: 'score',
+        incoming: level('fit-001', false, 1, 150),
+        retained: level('fit-001', true, 2, 150),
+      },
+    ])(
+      'should_record_new_timestamp_when_improved_field_is_$field',
+      async ({ incoming, retained }) => {
+        // Arrange
+        await createRequiredIndex();
+        let now = firstAt;
+        const store = new MongoProgressRepository(collection, {
+          now: () => now,
+        });
+        const omitted = level('fit-002', true, 1, 20);
+        await store.saveBest(input(level('fit-001', true, 2, 120), omitted));
+        now = laterAt;
+
+        // Act
+        const saved = await store.saveBest(input(incoming));
+        const reloaded = (await store.find(player, fit)).get();
+        const persisted = await collection.findOne(fitKey);
+
+        // Assert
+        expect(saved.levels).toEqual([retained, omitted]);
+        expect(saved.updatedAt).toEqual(laterAt);
+        expect(reloaded).toEqual(saved);
+        expect(persisted).toMatchObject({ updatedAt: laterAt, revision: 1 });
+      },
+    );
+
+    it('should_preserve_winner_timestamp_and_revision_when_retry_becomes_unchanged', async () => {
+      // Arrange
+      await createRequiredIndex();
+      const winnerCollection =
+        database.collection<ProgressDocument>('progress');
+      const winner = new MongoProgressRepository(winnerCollection, {
+        now: () => laterAt,
+      });
+      const initial = new MongoProgressRepository(winnerCollection, {
+        now: () => firstAt,
+      });
+      await initial.saveBest(input(level('fit-001', true, 1, 100)));
+      const now = vi.fn(() => new Date('2026-11-25T03:00:00.000Z'));
+      const loser = new MongoProgressRepository(collection, { now });
+      const originalReplace = collection.replaceOne.bind(collection);
+      let winnerDocument: unknown = null;
+      const replace = vi
+        .spyOn(collection, 'replaceOne')
+        .mockImplementationOnce(async (filter, document, options) => {
+          await winner.saveBest(input(level('fit-001', true, 3, 150)));
+          winnerDocument = await winnerCollection.findOne(fitKey);
+          return originalReplace(filter, document, options);
+        });
+
+      // Act
+      const saved = await loser.saveBest(
+        input(level('fit-001', false, 2, 120)),
+      );
+      const persisted = await winnerCollection.findOne(fitKey);
+
+      // Assert
+      expect(saved.levels).toEqual([level('fit-001', true, 3, 150)]);
+      expect(saved.updatedAt).toEqual(laterAt);
+      expect(persisted).toEqual(winnerDocument);
+      expect(persisted).toMatchObject({ updatedAt: laterAt, revision: 1 });
+      expect(replace).toHaveBeenCalledTimes(1);
+      expect(now).toHaveBeenCalledTimes(1);
+    });
+  });
 
   it('should_round_trip_both_shapes_when_progress_is_saved', async () => {
     // Arrange
@@ -262,7 +404,9 @@ describe('MongoProgressRepository (integration, UC-008)', () => {
         );
         const insert = vi.spyOn(progress, 'insertOne');
         const replace = vi.spyOn(progress, 'replaceOne');
-        const store = new MongoProgressRepository(progress);
+        const store = new MongoProgressRepository(progress, {
+          now: () => date,
+        });
 
         // Act and assert
         const incoming = Progress.forScore(player, lines, Count.of(12), date);

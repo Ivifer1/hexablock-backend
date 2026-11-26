@@ -91,6 +91,6 @@ import {
     },
   ],
   // Other modules protect their 🔒 routes with the same guard.
-  exports: [JwtAuthGuard, JwtTokenIssuer, GET_CURRENT_USER_USE_CASE],
+  exports: [JwtAuthGuard, JwtTokenIssuer, GET_CURRENT_USER_USE_CASE, CLOCK],
 })
 export class AuthModule {}
