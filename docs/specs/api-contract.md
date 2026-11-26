@@ -113,29 +113,32 @@ One progress entry per user and `gameId` (brief, section 5.2).
 }
 ```
 
-- Best-score variants use `bestScore` (integer ≥ 0) and leave `levels` empty.
+- Best-score variants use `bestScore` (nonnegative safe integer) and leave `levels` empty.
 - Level variants use `levels`, keyed by level id; `bestScore` is `null`. `stars` (0–3) is used by variants with stars
   (Hexa Fit) and stays `0` otherwise.
 
 #### `GET /progress` 🔒
 
-`200`: `{ "items": [ <progress>, ... ] }`, one item per variant the user has played. Errors: `401`.
+`200`: `{ "items": [ <progress>, ... ] }`, one item per variant with saved progress. Errors: `401`, `500`.
 
 #### `GET /progress/{gameId}` 🔒
 
 `200`: the progress. A variant never played returns an empty progress (`bestScore` `0` or `null`, `levels` `{}`),
-not `404`. Errors: `401`, `404` (unknown `gameId`).
+not `404`, and has `updatedAt: null`. Errors: `401`, `404` (invalid or unknown `gameId`), `500`.
 
 #### `PUT /progress/{gameId}` 🔒
 
-Body: the progress without `gameId` and `updatedAt`. The server **merges** it with the stored one and keeps the best
+Body: the progress without `gameId` and `updatedAt`. Undocumented fields are rejected. Scores must be nonnegative safe integers (maximum 9007199254740991). The server **merges** it with the stored one and keeps the best
 value of every field, so syncing from an offline device never loses a record:
 
 - `bestScore` = max of both.
 - Per level: `completed` = either is true; `stars` = max; `bestScore` = max.
 - Levels missing from the body are kept.
 
-`200`: the merged progress. Errors: `400` (invalid values or a level id that does not belong to `gameId`), `401`, `404`.
+`200`: the merged progress. The server assigns `updatedAt` in UTC when it creates or improves the saved
+record. A valid sync that leaves progress unchanged keeps the existing timestamp. Errors: `400`
+(invalid values or a level ID that does not belong to `gameId`), `401`, `404` (invalid or unknown
+`gameId`), `413` (oversized request), `500` (unexpected error or unconfirmed write). An invalid or unknown game is checked before field validation; malformed JSON is rejected by the existing parser.
 
 ### Scores and leaderboard
 

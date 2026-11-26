@@ -25,6 +25,15 @@ export class LevelProgress {
     return new LevelProgress(levelId, completed, stars, bestScore);
   }
 
+  equals(other: LevelProgress): boolean {
+    return (
+      this.levelId.equals(other.levelId) &&
+      this.completed === other.completed &&
+      this.stars.equals(other.stars) &&
+      this.bestScore.equals(other.bestScore)
+    );
+  }
+
   mergedWith(other: LevelProgress): LevelProgress {
     if (!this.levelId.equals(other.levelId)) {
       throw new DomainError(ErrorCode.InvalidProgress);
