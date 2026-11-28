@@ -33,14 +33,28 @@ The client repo has its own catalog; cross-repo references use `client:FR-###`.
 | C-002 | Use cases are generic over `gameId`; no duplicated use case per variant. | 3.4 |
 | C-003 | SOLID applied and documented with one real example per principle. | 3.2 |
 | C-004 | GoF patterns justified and documented. | 3.3 |
-| C-005 | At least one AOP aspect without libraries (decorators/proxies over use cases). | 3.5 |
+| C-005 | At least one AOP aspect at project level without libraries (decorators/proxies over use cases); the planned implementation is in the client, not additional backend aspects. | 3.5 |
 | C-006 | Technology: NestJS + TypeScript. | header |
 | C-007 | GitHub with protected branches, PRs, Conventional Commits in English. | 2, 6.2 |
 | C-008 | README in English with the required sections; `AI_USAGE.md` at the root. | 6, 7 |
 | C-009 | Class and layer diagrams in `/docs` (image + editable source). | 4 |
 
-## Open questions (team decides, records an ADR or BR)
-- Who may create/update levels: an admin role, a seed script, or any authenticated user?
-- Progress sync conflicts: last write wins, or keep the maximum (stars, scores) per level?
-- Leaderboard: top N, pagination, one entry per user or every score?
-- Database: MongoDB (decided by the team on 2026-11-04). Still open: the ODM and the in-memory option for integration tests.
+## Recorded decisions and implementation
+
+These facts reconcile previously open questions; they do not change the catalog's formal `Draft` status or approve other draft specifications.
+
+| Topic | Recorded behavior | Reference |
+| --- | --- | --- |
+| Level writes | JWT and the current stored administrator role are required; public registration creates players | [UC-005](use-cases/UC-005-manage-level-definitions.md), [UC-006](use-cases/UC-006-first-administrator.md) |
+| Progress conflicts | Retain maxima for counts and combine completion flags without losing completed progress; an unchanged sync preserves date/revision | [UC-008](use-cases/UC-008-retain-player-progress.md), [UC-009](use-cases/UC-009-read-and-sync-player-progress.md) |
+| Scores | One personal best per player and ranking scope; only a higher attempt replaces it and its achievement time | [UC-010](use-cases/UC-010-submit-personal-best-score.md) |
+| Leaderboards | Both scopes require a session; return an ordered prefix with limit 1–100 (default 10); exact score/time ties share ranks | [UC-011](use-cases/UC-011-read-leaderboard.md) |
+| Persistence | MongoDB with Mongoose; disposable integration/E2E MongoDB via `mongodb-memory-server` | [ADR-0001](../adr/0001-mongodb-with-mongoose.md), [ADR status note](../adr/README.md#implementation-and-formal-status) |
+| AOP allocation | No additional custom backend aspects are planned; client AOP must be implemented and demonstrated separately | [Backend scope](../../README.md#aop) |
+
+## Remaining confirmations
+
+- The catalog as a whole and UC-001–UC-003 retain their recorded formal approval states; implementation is not approval.
+- ADR-0001 still says `Proposed`; the team must reconcile that formal status with the implemented persistence choice.
+- The team has not selected a license. The shared README note records that decision as pending.
+- Client AOP completion and final repository diagram exports are not established by this backend documentation update.

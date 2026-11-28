@@ -9,7 +9,10 @@
 | Linked requirements | FR-002, NFR-002, NFR-003 |
 | Entities | User, Session / Token |
 
+Documentation reconciliation: this specification remains `Draft`; implementation and integration do not grant human approval. Current-user lookup is implemented and covered by the integrated backend checks recorded in the [dashboard](../dashboard.md). This note does not change the business rules below.
+
 ## Preconditions
+
 - The player has an access token from UC-001 or UC-002.
 
 ## Trigger
