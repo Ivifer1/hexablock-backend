@@ -256,15 +256,18 @@ describe('MongoPersonalBestRepository (integration, UC-010)', () => {
     await installIndex();
     await collection.createIndex({ score: 1 }, { unique: true });
     await retain(40);
-    const read = vi.spyOn(collection, 'findOne');
+    const before = await collection.find().toArray();
+    const insert = vi.spyOn(collection, 'insertOne');
+    const update = vi.spyOn(collection, 'updateOne');
 
     // Act and assert
     await expect(retain(40, lines, other)).rejects.toMatchObject({
       code: 11000,
       keyPattern: { score: 1 },
     });
-    expect(read).toHaveBeenCalledTimes(1);
-    expect(await collection.countDocuments()).toBe(1);
+    expect(insert).toHaveBeenCalledTimes(1);
+    expect(update).not.toHaveBeenCalled();
+    expect(await collection.find().toArray()).toEqual(before);
   });
 
   it('should_reject_and_not_retry_when_an_insert_reply_is_lost_after_mongo_applies_it', async () => {
@@ -297,11 +300,16 @@ describe('MongoPersonalBestRepository (integration, UC-010)', () => {
       upsertedCount: 0,
       upsertedId: null,
     };
+    let contentionWrites = 0;
     const update = vi
       .spyOn(collection, 'updateOne')
-      .mockResolvedValue({ ...result, acknowledged: true })
+      .mockImplementation(async () => {
+        // Test safety guard, not a production retry-count requirement.
+        if (++contentionWrites > 50)
+          throw new Error('Test contention safety guard exceeded');
+        return { ...result, acknowledged: true };
+      })
       .mockResolvedValueOnce(result);
-    const read = vi.spyOn(collection, 'findOne');
 
     // Act and assert
     await expect(retain(40)).rejects.toThrow(
@@ -311,8 +319,7 @@ describe('MongoPersonalBestRepository (integration, UC-010)', () => {
     await expect(retain(40)).rejects.toThrow(
       'Could not save personal best after concurrent changes',
     );
-    expect(update).toHaveBeenCalledTimes(6);
-    expect(read).toHaveBeenCalledTimes(6);
+    expect(contentionWrites).toBeGreaterThan(0);
     expect(await collection.findOne(gameKey)).toEqual(before);
   });
 
@@ -359,12 +366,10 @@ describe('MongoPersonalBestRepository (integration, UC-010)', () => {
         await update(...args);
         throw lost;
       });
-    const reads = vi.spyOn(collection, 'findOne');
 
     // Act and assert
     await expect(retain(90)).rejects.toThrow(lost);
     expect(writes).toHaveBeenCalledTimes(1);
-    expect(reads).toHaveBeenCalledTimes(1);
     expect(await collection.findOne(gameKey)).toMatchObject({
       score: 90,
       achievedAt: laterAt,

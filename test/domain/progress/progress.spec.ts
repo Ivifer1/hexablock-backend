@@ -139,10 +139,13 @@ describe('Progress (UC-008)', () => {
     input.push(level('fit-002', true, 3, 7));
     date.setUTCFullYear(2000);
     progress.updatedAt.setUTCFullYear(2001);
+    Reflect.set(progress.levels, '0', level('fit-009', true, 3, 99));
+    Reflect.set(progress.levels, '1', level('fit-008', true, 2, 88));
 
     // Assert
     expect(progress.updatedAt).toEqual(instant());
-    expect(progress.levels).toHaveLength(1);
-    expect(Object.isFrozen(progress.levels)).toBe(true);
+    expect(levels(progress)).toEqual([
+      { id: 'fit-001', completed: false, stars: 0, score: 0 },
+    ]);
   });
 });

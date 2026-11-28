@@ -4,7 +4,7 @@ import { AchievedAt } from '../../../src/domain/score/achieved-at.js';
 import { PersonalBest } from '../../../src/domain/score/personal-best.js';
 import { RankingScope } from '../../../src/domain/score/ranking-scope.js';
 import { Score } from '../../../src/domain/score/score.js';
-import { DomainError } from '../../../src/domain/shared/domain-error.js';
+import { ErrorCode } from '../../../src/domain/shared/error-code.js';
 import { UserId } from '../../../src/domain/user/user-id.js';
 
 const firstTime = '2026-11-25T12:00:00.000Z';
@@ -52,7 +52,11 @@ describe('UC-010 PersonalBest', () => {
       const retained = best.consider(attempt, attemptedAt);
 
       // Assert
-      expect(retained).toBe(best);
+      expect(retained.playerId.equals(player)).toBe(true);
+      expect(retained.scope.gameId.equals(game)).toBe(true);
+      expect(retained.scope.levelId.isPresent()).toBe(false);
+      expect(best.score.toNumber()).toBe(120);
+      expect(best.achievedAt.toDate().toISOString()).toBe(firstTime);
       expect(retained.score.toNumber()).toBe(120);
       expect(retained.achievedAt.toDate().toISOString()).toBe(firstTime);
     },
@@ -76,11 +80,9 @@ describe('UC-010 PersonalBest', () => {
     );
 
     // Assert
-    expect(improved).not.toBe(best);
-    expect(improved.playerId).toBe(player);
-    expect(improved.scope).toBe(scoped);
-    expect(improved.scope.gameId).toBe(game);
-    expect(improved.scope.levelId.get()).toBe(level);
+    expect(improved.playerId.equals(player)).toBe(true);
+    expect(improved.scope.gameId.equals(game)).toBe(true);
+    expect(improved.scope.levelId.get().equals(level)).toBe(true);
     expect(improved.score.toNumber()).toBe(130);
     expect(improved.achievedAt.toDate().toISOString()).toBe(nextTime);
     expect(best.score.toNumber()).toBe(120);
@@ -100,10 +102,41 @@ describe('UC-010 PersonalBest', () => {
     expect(at.toDate().toISOString()).toBe(firstTime);
   });
 
-  it.each([-1, 1.5, Number.MAX_SAFE_INTEGER + 1])(
-    'should_reject_an_invalid_score_when_given_%s',
-    (value) => {
-      expect(() => Score.of(value)).toThrow(DomainError);
-    },
-  );
+  it('should_reject_an_invalid_achievement_time_when_the_date_is_not_finite', () => {
+    // Arrange
+    const date = new Date(Number.NaN);
+
+    // Act
+    const create = () => AchievedAt.of(date);
+
+    // Assert
+    expect(create).toThrow(
+      expect.objectContaining({
+        name: 'DomainError',
+        code: ErrorCode.InvalidAchievedAt,
+      }),
+    );
+  });
+
+  it.each([
+    -1,
+    1.5,
+    Number.MAX_SAFE_INTEGER + 1,
+    Number.NaN,
+    Infinity,
+    -Infinity,
+  ])('should_reject_an_invalid_score_when_given_%s', (value) => {
+    // Arrange: the invalid score comes from the table.
+
+    // Act
+    const create = () => Score.of(value);
+
+    // Assert
+    expect(create).toThrow(
+      expect.objectContaining({
+        name: 'DomainError',
+        code: ErrorCode.InvalidScore,
+      }),
+    );
+  });
 });

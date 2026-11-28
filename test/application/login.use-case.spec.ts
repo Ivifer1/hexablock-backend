@@ -84,17 +84,35 @@ describe('LoginUseCase (UC-002)', () => {
     });
   });
 
-  it('should_hash_once_when_username_does_not_exist', async () => {
-    // Arrange: an unknown username must cost as much as a wrong password.
+  it('should_reject_credentials_with_password_work_when_username_does_not_exist', async () => {
+    // Arrange: password work is a proxy, not a measurement of response time.
+    const tokens = new FakeTokenIssuer();
+    const issue = vi.spyOn(tokens, 'issueFor');
+    login = new LoginUseCase(users, hasher, tokens);
     const input = {
       username: Username.of('nobody'),
       password: Password.of('correct-horse'),
     };
 
     // Act
-    await login.execute(input).catch(() => undefined);
+    const attempt = login.execute(input);
 
     // Assert
-    expect(hasher.hashCalls + hasher.verifyCalls).toBe(1);
+    await expect(attempt).rejects.toMatchObject({
+      code: ErrorCode.InvalidCredentials,
+    });
+    const unknownUserWork = hasher.hashCalls + hasher.verifyCalls;
+    hasher.hashCalls = 0;
+    hasher.verifyCalls = 0;
+    await expect(
+      login.execute({
+        username: Username.of('ivifer'),
+        password: Password.of('wrong-horse'),
+      }),
+    ).rejects.toMatchObject({ code: ErrorCode.InvalidCredentials });
+    expect(unknownUserWork).toBeGreaterThan(0);
+    expect(hasher.hashCalls + hasher.verifyCalls).toBe(unknownUserWork);
+    expect(users.saved).toEqual([stored]);
+    expect(issue).not.toHaveBeenCalled();
   });
 });
