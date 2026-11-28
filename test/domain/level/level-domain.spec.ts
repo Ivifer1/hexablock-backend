@@ -341,9 +341,10 @@ describe('Board and coordinates (FR-010, issue #28)', () => {
     const definition = BoardDefinition.of(TopologyId.of('hex-axial'), input);
     // Act
     input.push(RawCoord.of([9, 9]));
+    Reflect.set(definition.cells, '0', RawCoord.of([8, 8]));
+    Reflect.set(definition.cells, '1', RawCoord.of([7, 7]));
     // Assert
     expect(definition.cells).toHaveLength(1);
-    expect(Object.isFrozen(definition.cells)).toBe(true);
     expect(definition.cells[0].equals(RawCoord.of([0, 0]))).toBe(true);
   });
 
@@ -364,8 +365,12 @@ describe('Board and coordinates (FR-010, issue #28)', () => {
     expect(
       model.name.equals(LocalizedName.of('Nivel de prueba', 'Test level')),
     ).toBe(true);
-    expect(model.board).toBe(definition);
-    expect(model.section).toBe(section);
+    expect(model.board.topology.equals(TopologyId.of('hex-axial'))).toBe(true);
+    expect(model.board.cells.map((cell) => cell.toArray())).toEqual([
+      [0, 0],
+      [1, 0],
+    ]);
+    expect(model.section.sectionKey().equals(SectionKey.of('fake'))).toBe(true);
   });
 });
 

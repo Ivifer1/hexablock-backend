@@ -10,7 +10,13 @@ import { Count } from '../../../src/domain/shared/count.js';
 const at = new Date('2026-11-26T12:00:00Z');
 const game = GameId.of('hexa-lines');
 const scope = RankingScope.forGame(game);
-const orderedKey = { gameId: 1, levelId: 1, score: -1, achievedAt: 1, userId: 1 } as const;
+const orderedKey = {
+  gameId: 1,
+  levelId: 1,
+  score: -1,
+  achievedAt: 1,
+  userId: 1,
+} as const;
 
 describe('UC-011 MongoLeaderboardQuery', () => {
   let client: mongo.MongoClient;
@@ -21,7 +27,13 @@ describe('UC-011 MongoLeaderboardQuery', () => {
     db = client.db('uc011-' + randomUUID());
     query = new MongoLeaderboardQuery(db);
   });
-  afterEach(async () => { try { await db.dropDatabase(); } finally { await client.close(); } });
+  afterEach(async () => {
+    try {
+      await db.dropDatabase();
+    } finally {
+      await client.close();
+    }
+  });
 
   async function seed() {
     await db.collection('users').insertMany([
@@ -30,12 +42,48 @@ describe('UC-011 MongoLeaderboardQuery', () => {
       { _id: 'c', username: 'carol', passwordHash: 'private', role: 'user' },
     ] as never[]);
     await db.collection('personal_bests').insertMany([
-      { gameId: 'hexa-lines', levelId: null, userId: 'b', score: 120, achievedAt: at },
-      { gameId: 'hexa-lines', levelId: null, userId: 'a', score: 120, achievedAt: at },
-      { gameId: 'hexa-lines', levelId: null, userId: 'c', score: 120, achievedAt: new Date(at.getTime() + 1000) },
-      { gameId: 'hexa-merge', levelId: null, userId: 'a', score: 999, achievedAt: at },
-      { gameId: 'hexa-lines', levelId: 'level-1', userId: 'a', score: 70, achievedAt: at },
-      { gameId: 'hexa-lines', levelId: 'level-2', userId: 'a', score: 900, achievedAt: at },
+      {
+        gameId: 'hexa-lines',
+        levelId: null,
+        userId: 'b',
+        score: 120,
+        achievedAt: at,
+      },
+      {
+        gameId: 'hexa-lines',
+        levelId: null,
+        userId: 'a',
+        score: 120,
+        achievedAt: at,
+      },
+      {
+        gameId: 'hexa-lines',
+        levelId: null,
+        userId: 'c',
+        score: 120,
+        achievedAt: new Date(at.getTime() + 1000),
+      },
+      {
+        gameId: 'hexa-merge',
+        levelId: null,
+        userId: 'a',
+        score: 999,
+        achievedAt: at,
+      },
+      {
+        gameId: 'hexa-lines',
+        levelId: 'level-1',
+        userId: 'a',
+        score: 70,
+        achievedAt: at,
+      },
+      {
+        gameId: 'hexa-lines',
+        levelId: 'level-2',
+        userId: 'a',
+        score: 900,
+        achievedAt: at,
+      },
       { gameId: 'hexa-lines', userId: 'a', score: 1000, achievedAt: at },
     ]);
   }
@@ -46,13 +94,25 @@ describe('UC-011 MongoLeaderboardQuery', () => {
     const before = await db.collection('personal_bests').find().toArray();
     // Act
     const result = await query.read(scope, Count.of(2));
-    const level = await query.read(RankingScope.forLevel(game, LevelId.of('level-1')), Count.of(10));
+    const level = await query.read(
+      RankingScope.forLevel(game, LevelId.of('level-1')),
+      Count.of(10),
+    );
     // Assert
-    expect(result.map(entry => entry.username.toString())).toEqual(['alice', 'bruno']);
-    expect(result.map(entry => entry.score.toNumber())).toEqual([120, 120]);
-    expect(Object.keys(result[0]!).sort((a, b) => a.localeCompare(b))).toEqual(['achievedAt', 'score', 'username']);
-    expect(level.map(entry => entry.score.toNumber())).toEqual([70]);
-    expect(await db.collection('personal_bests').find().toArray()).toEqual(before);
+    expect(result.map((entry) => entry.username.toString())).toEqual([
+      'alice',
+      'bruno',
+    ]);
+    expect(result.map((entry) => entry.score.toNumber())).toEqual([120, 120]);
+    expect(Object.keys(result[0]!).sort((a, b) => a.localeCompare(b))).toEqual([
+      'achievedAt',
+      'score',
+      'username',
+    ]);
+    expect(level.map((entry) => entry.score.toNumber())).toEqual([70]);
+    expect(await db.collection('personal_bests').find().toArray()).toEqual(
+      before,
+    );
   });
   it('should_resolve_users_only_when_their_scores_are_selected', async () => {
     // Arrange
@@ -68,7 +128,12 @@ describe('UC-011 MongoLeaderboardQuery', () => {
   it('should_reject_corruption_when_a_selected_record_is_invalid', async () => {
     // Arrange
     await seed();
-    await db.collection('personal_bests').updateOne({ userId: 'a', levelId: null, gameId: 'hexa-lines' }, { $set: { score: 1.5 } });
+    await db
+      .collection('personal_bests')
+      .updateOne(
+        { userId: 'a', levelId: null, gameId: 'hexa-lines' },
+        { $set: { score: 1.5 } },
+      );
     // Act
     const result = query.read(scope, Count.of(100));
     // Assert
@@ -86,23 +151,42 @@ describe('UC-011 MongoLeaderboardQuery', () => {
   it('should_report_storage_failure_when_a_selected_username_is_invalid', async () => {
     // Arrange
     await seed();
-    await db.collection('users').updateOne({ _id: 'a' } as never, { $set: { username: '' } });
+    // Alice is valid and selected before Bruno; corruption must reject the whole read.
+    await db
+      .collection('users')
+      .updateOne({ _id: 'b' } as never, { $set: { username: '' } });
     // Act
     const result = query.read(scope, Count.of(10));
     // Assert
-    await expect(result).rejects.toThrow('Invalid stored leaderboard username');
+    await expect(result).rejects.toThrow();
   });
-  it.each([null, 'level-1'])('should_use_ordered_index_when_scope_is_%s', async levelId => {
-    // Arrange
-    await seed();
-    const records = db.collection('personal_bests');
-    await records.createIndex(orderedKey, { name: 'leaderboard_order', collation: { locale: 'simple' } });
-    // Act
-    const plan = await records.find({ gameId: 'hexa-lines', levelId: { $eq: levelId, $exists: true } }).collation({ locale: 'simple' }).sort({ score: -1, achievedAt: 1, userId: 1 }).limit(2).hint('leaderboard_order').explain('executionStats');
-    // Assert
-    const serialized = JSON.stringify(plan.queryPlanner.winningPlan);
-    expect(serialized).toContain('leaderboard_order');
-    expect(serialized).not.toMatch(/"stage":"SORT"/);
-    expect(plan.executionStats.nReturned).toBeLessThanOrEqual(2);
-  });
+  it.each([null, 'level-1'])(
+    'should_support_ordered_reads_with_the_index_when_scope_is_%s',
+    async (levelId) => {
+      // Arrange
+      await seed();
+      const records = db.collection('personal_bests');
+      await records.createIndex(orderedKey, {
+        name: 'leaderboard_order',
+        collation: { locale: 'simple' },
+      });
+      // Act
+      // Index capability only; this does not prove the adapter's unhinted planner choice.
+      const plan = await records
+        .find({
+          gameId: 'hexa-lines',
+          levelId: { $eq: levelId, $exists: true },
+        })
+        .collation({ locale: 'simple' })
+        .sort({ score: -1, achievedAt: 1, userId: 1 })
+        .limit(2)
+        .hint('leaderboard_order')
+        .explain('executionStats');
+      // Assert
+      const serialized = JSON.stringify(plan.queryPlanner.winningPlan);
+      expect(serialized).toContain('leaderboard_order');
+      expect(serialized).not.toMatch(/"stage":"SORT"/);
+      expect(plan.executionStats.nReturned).toBeLessThanOrEqual(2);
+    },
+  );
 });

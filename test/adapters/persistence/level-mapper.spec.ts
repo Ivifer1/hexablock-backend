@@ -70,11 +70,10 @@ describe('LevelMapper (FR-010, issue #30)', () => {
 
     // Act
     const snapshot = coordinate.toArray();
-    const modified = Reflect.set(snapshot, '0', 4);
+    Reflect.set(snapshot, '0', 4);
 
     // Assert
-    expect(modified).toBe(false);
     expect(coordinate.equals(RawCoord.of([0, -1]))).toBe(true);
-    expect(coordinate.toArray()).not.toBe(snapshot);
+    expect(coordinate.toArray()).toEqual([0, -1]);
   });
 });

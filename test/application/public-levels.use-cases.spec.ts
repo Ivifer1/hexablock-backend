@@ -3,9 +3,20 @@ import { GetLevelUseCase } from '../../src/application/use-cases/get-level.use-c
 import { ListLevelsUseCase } from '../../src/application/use-cases/list-levels.use-case.js';
 import { GameId } from '../../src/domain/game/game-id.js';
 import { LevelId } from '../../src/domain/level/level-id.js';
+import type { LevelValidator } from '../../src/domain/level/level-validator.js';
+import { DomainError } from '../../src/domain/shared/domain-error.js';
 import { ErrorCode } from '../../src/domain/shared/error-code.js';
 import { Optional } from '../../src/domain/shared/optional.js';
-import { createLevelValidator } from '../../src/infrastructure/levels/create-level-validator.js';
+
+function levelSupport(
+  supported: boolean,
+): Pick<LevelValidator, 'assertSupportsLevels'> {
+  return {
+    assertSupportsLevels() {
+      if (!supported) throw new DomainError(ErrorCode.UnknownGame);
+    },
+  };
+}
 
 function fakeRepository() {
   return {
@@ -23,7 +34,7 @@ describe('Public level use cases (UC-004)', () => {
   it('should_not_query_repository_when_game_does_not_support_levels', async () => {
     // Arrange
     const repository = fakeRepository();
-    const useCase = new ListLevelsUseCase(repository, createLevelValidator());
+    const useCase = new ListLevelsUseCase(repository, levelSupport(false));
 
     // Act
     const read = useCase.execute(GameId.of('hexa-lines'));
@@ -43,7 +54,7 @@ describe('Public level use cases (UC-004)', () => {
     // Act
     const listed = new ListLevelsUseCase(
       repository,
-      createLevelValidator(),
+      levelSupport(true),
     ).execute(GameId.of('hexa-fit'));
     const found = new GetLevelUseCase(repository).execute(
       LevelId.of('fit-001'),
